@@ -1,0 +1,73 @@
+apply plugin: 'com.android.application'
+apply plugin: 'de.undercouch.download'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24.0.2"
+    defaultConfig {
+        applicationId "com.example.androidthings.photobooth"
+        minSdkVersion 24
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        jackOptions {
+            enabled true
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
+}
+
+// Download model zip file into ../../assets directory
+// unzip it to demo project's own ./assets directory
+import de.undercouch.gradle.tasks.download.Download
+task downloadFile(type: Download) {
+    src 'https://storage.googleapis.com/download.tensorflow.org/models/stylize_v1.zip'
+    dest projectDir.toString() + '/../../assets/stylize.zip'
+}
+
+task unzip(type: Copy) {
+    from zipTree(projectDir.toString() + '/../../assets/stylize.zip')
+    into file(projectDir.toString() + '/assets')
+}
+unzip.dependsOn downloadFile
+
+project.afterEvaluate {
+    if (!(new File(projectDir.toString() + '/assets')).exists()) {
+        preBuild.dependsOn unzip
+    }
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    testCompile 'junit:junit:4.12'
+
+    compile 'com.android.support:support-v13:24.2.0'
+    compile 'com.google.firebase:firebase-storage:10.0.1'
+    compile(name: 'Tensorflow-Android-Inference-alpha-debug', ext: 'aar')
+
+    provided 'com.google.android.things:androidthings:0.2-devpreview'
+    compile 'com.google.android.things.contrib:driver-button:0.2'
+
+}
+
+apply plugin: 'com.google.gms.google-services'

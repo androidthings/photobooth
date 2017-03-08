@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "926917140954",
+    "firebase_url": "https://smart-photobooth-93105.firebaseio.com",
+    "project_id": "smart-photobooth-93105",
+    "storage_bucket": "smart-photobooth-93105.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:926917140954:android:17d3a0e1fa5e408b",
+        "android_client_info": {
+          "package_name": "com.example.androidthings.photobooth"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "926917140954-9pqcnt1ehni88bdiqq8t6p1kp8vcgsve.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.androidthings.photobooth",
+            "certificate_hash": "C76219DD7AECDD7D1A369F6E0824816051FDF829"
+          }
+        },
+        {
+          "client_id": "926917140954-i0icb1rsb82kogvrtrefj2o298rnn0ml.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBg0B6WzFCIHE_rlczvJ_7k9_f8VYNRWc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "926917140954-i0icb1rsb82kogvrtrefj2o298rnn0ml.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
