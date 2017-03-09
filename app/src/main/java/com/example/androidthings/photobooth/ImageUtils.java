@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.androidthings.imageclassifier.env;
+package com.example.androidthings.photobooth;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.media.Image;
 import android.os.Environment;
+import android.util.Log;
+
 import junit.framework.Assert;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,8 +29,9 @@ import java.nio.ByteBuffer;
  * Utility class for manipulating images.
  **/
 public class ImageUtils {
-    @SuppressWarnings("unused")
-    private static final Logger LOGGER = new Logger();
+
+    static final String TAG = "ImageUtils";
+
     // This value is 2 ^ 18 - 1, and is used to clamp the RGB values before their ranges
     // are normalized to eight bits.
     static final int kMaxChannelValue = 262143;
@@ -52,10 +55,9 @@ public class ImageUtils {
     public static void saveBitmap(final Bitmap bitmap, String fname) {
         final String root =
                 Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "tensorflow";
-        LOGGER.i("Saving %dx%d bitmap to %s.", bitmap.getWidth(), bitmap.getHeight(), root);
         final File myDir = new File(root);
         if (!myDir.mkdirs()) {
-            LOGGER.i("Make dir failed");
+            Log.i(TAG, "Make dir failed");
         }
 
         final File file = new File(myDir, fname);
@@ -68,7 +70,7 @@ public class ImageUtils {
             out.flush();
             out.close();
         } catch (final Exception e) {
-            LOGGER.e(e, "Exception!");
+            Log.e(TAG, "Exception!", e);
         }
     }
     public static void convertImageToBitmap(Image image, int width, int height, int[] output,

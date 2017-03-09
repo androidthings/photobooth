@@ -152,11 +152,6 @@ public class CameraConnectionFragment extends Fragment {
                 }
             };
 
-
-    public static CameraConnectionFragment newInstance() {
-        return new CameraConnectionFragment();
-    }
-
     @Override
     public View onCreateView(
             final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
@@ -339,6 +334,6 @@ public class CameraConnectionFragment extends Fragment {
     }
 
     public Bitmap getPreviewBitmap() {
-        return imagePreviewListener.getLatestBitmap();
+        return Bitmap.createBitmap(imagePreviewListener.getLatestBitmap());
     }
 }

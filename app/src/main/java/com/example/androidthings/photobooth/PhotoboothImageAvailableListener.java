@@ -21,17 +21,11 @@ import android.graphics.Bitmap.Config;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.Handler;
 import android.os.Trace;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.example.androidthings.imageclassifier.env.ImageUtils;
-
 import junit.framework.Assert;
-
-import java.util.Calendar;
-import java.util.TimeZone;
 
 import static android.content.ContentValues.TAG;
 
@@ -39,9 +33,7 @@ import static android.content.ContentValues.TAG;
  * Class that takes in preview frames and converts the image to Bitmaps to process with Tensorflow.
  */
 public class PhotoboothImageAvailableListener implements OnImageAvailableListener {
-    private static final boolean SAVE_PREVIEW_BITMAP = false;
-
-    private static final int INPUT_SIZE = 224;
+    private static final int INPUT_SIZE = 256;
 
     private int sensorOrientation = 0;
 
@@ -103,7 +95,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             ImageUtils.convertImageToBitmap(image, previewWidth, previewHeight, rgbBytes, cachedYuvBytes);
 
 
-            updateImageView(rgbFrameBitmap, activity);
+            updateImageView(croppedBitmap, activity);
 
             image.close();
         } catch (final Exception e) {
@@ -121,20 +113,8 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
 
         }
 
-        // For examining the actual input.
-        if (SAVE_PREVIEW_BITMAP) {
-            Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            calendar.clear();
-            long secondsSinceEpoch = calendar.getTimeInMillis();
-            if (secondsSinceEpoch % 1000 == 0)
-                ImageUtils.saveBitmap(croppedBitmap, "preview.png");
-        }
-
         computing = false;
-
         Trace.endSection();
-
-
     }
 
     private void updateImageView(final Bitmap bmp, final Activity activity) {
@@ -160,6 +140,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
     }
 
     public Bitmap getLatestBitmap() {
+
         return mLatestBitmap;
     }
 }

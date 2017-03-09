@@ -110,7 +110,7 @@ public class PhotoboothActivity extends Activity {
     }
 
     private void setFragment() {
-        cameraFragment = CameraConnectionFragment.newInstance();
+        cameraFragment = new CameraConnectionFragment();
         getFragmentManager()
                 .beginTransaction()
                 .replace(R.id.container, cameraFragment)

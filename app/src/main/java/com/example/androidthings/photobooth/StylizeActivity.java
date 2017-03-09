@@ -17,6 +17,9 @@
 package com.example.androidthings.photobooth;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -31,6 +34,8 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
  */
 public class StylizeActivity extends PhotoboothActivity implements TensorflowStyler {
 
+    private static final int INPUT_SIZE = 256;
+
     public static final String TAG = "StylizeActivity";
 
     private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
@@ -44,6 +49,13 @@ public class StylizeActivity extends PhotoboothActivity implements TensorflowSty
     private float[] floatValues;
 
     private TensorFlowInferenceInterface inferenceInterface;
+
+    // For testing the artistic styles, will save the original image, the "stylized" image,
+    // and the blended combination of the two to device when this flag is set to true.
+    private static final boolean IMAGE_PREVIEW_DEBUG = false;
+
+    // For testing:  Just take one picture and apply all styles, saving images internally.
+    private static final boolean PREVIEW_DUMP_DEBUG = false;
 
     // Background threads specifically for Tensorflow
     /**
@@ -66,6 +78,9 @@ public class StylizeActivity extends PhotoboothActivity implements TensorflowSty
     public void initializeTensorFlow() {
         inferenceInterface = new TensorFlowInferenceInterface();
         inferenceInterface.initializeTensorFlow(getAssets(), MODEL_FILE);
+
+        intValues = new int[INPUT_SIZE * INPUT_SIZE];
+        floatValues = new float[INPUT_SIZE * INPUT_SIZE * 3];
     }
 
     boolean processingButton;
@@ -75,27 +90,43 @@ public class StylizeActivity extends PhotoboothActivity implements TensorflowSty
                 (button, pressed) -> {
                     if (!processingButton) {
                         processingButton = true;
-                        setStyle(++mSelectedStyle);
-                        Bitmap bitmapToStylize = getCameraFragment().getPreviewBitmap();
-                        if (bitmapToStylize != null) {
-                            Log.d(TAG, "Button pressed, calling stylize.");
-                            updateStylizedView(bitmapToStylize);
+                        if(PREVIEW_DUMP_DEBUG) {
+                            saveStyleExamples();
+                            return;
                         } else {
-                            Log.d(TAG, "bitmapToStylize was null! NULLLL");
-                        }
+                            setStyle(mSelectedStyle + 1);
+                            Bitmap bitmapToStylize = getCameraFragment().getPreviewBitmap();
+                            if (bitmapToStylize != null) {
+                                Log.d(TAG, "Button pressed, calling stylize.");
+                                updateStylizedView(bitmapToStylize);
+                            } else {
+                                Log.d(TAG, "bitmapToStylize was null! NULLLL");
+                            }
 
-                        Log.d(TAG, "Button pressed, updateStylizedView called.");
+                            Log.d(TAG, "Button pressed, updateStylizedView called.");
+                        }
+                        processingButton = false;
                     }
                 }
         );
     }
 
+    private void saveStyleExamples() {
+        Bitmap originalBitmap = getCameraFragment().getPreviewBitmap();
+        ImageUtils.saveBitmap(originalBitmap, "original.png");
+        runInBackground(() -> {
+            for (int i = 0; i < NUM_STYLES; i++) {
+                setStyle(i);
+                Bitmap styledBitmap = Bitmap.createBitmap(originalBitmap);
+                stylizeBitmap(styledBitmap);
+                Bitmap blended = blendBitmaps(styledBitmap, originalBitmap);
+                ImageUtils.saveBitmap(styledBitmap, "preview-" + i + "-styled.png");
+                ImageUtils.saveBitmap(blended, "preview-" + i + "-blended.png");
+            }
+        });
+    }
 
-    @Override
-    public void stylizeImage(final Bitmap bitmap) {
-
-        intValues = new int[bitmap.getWidth() * bitmap.getHeight()];
-        floatValues = new float[bitmap.getWidth() * bitmap.getHeight() * 3];
+    public void stylizeBitmap(final Bitmap bitmap) {
 
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
@@ -123,20 +154,21 @@ public class StylizeActivity extends PhotoboothActivity implements TensorflowSty
         }
 
         bitmap.setPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
-        Log.d(TAG, "stylizeImage() completed.");
+        Log.d(TAG, "stylizeBitmap() completed.");
     }
 
     public void updateStylizedView(final Bitmap sourceImage) {
         runInBackground(() -> {
-                    Bitmap imageToStylize = Bitmap.createScaledBitmap(
-                            sourceImage, sourceImage.getWidth(), sourceImage.getHeight(), false);
-                    stylizeImage(imageToStylize);
+                    Bitmap stylizedImage = Bitmap.createBitmap(sourceImage);
+                    stylizeBitmap(stylizedImage);
+                    Bitmap blended = blendBitmaps(stylizedImage, sourceImage);
                     runOnUiThread(() -> {
-                        if (imageToStylize != null) {
+                        if (stylizedImage != null) {
                             ImageView stylizedView =
                                     (ImageView) findViewById(R.id.stylizedView);
                             if (stylizedView != null) {
-                                stylizedView.setImageBitmap(imageToStylize);
+
+                                stylizedView.setImageBitmap(blended);
                                 Log.d(TAG, "stylizedView updated.");
                             } else {
                                 Log.d(TAG, "stylizedView is null.");
@@ -144,20 +176,51 @@ public class StylizeActivity extends PhotoboothActivity implements TensorflowSty
                         } else {
                             Log.d(TAG, "Bitmap sent to updateStylizedView is null.");
                         }
-                        processingButton = false;
                     });
+
+                    if (IMAGE_PREVIEW_DEBUG) {
+                        ImageUtils.saveBitmap(
+                                sourceImage, "preview-" + mSelectedStyle + "-orig.png");
+                        ImageUtils.saveBitmap(
+                                stylizedImage, "preview-" + mSelectedStyle + "-styled.png");
+                        ImageUtils.saveBitmap(
+                                blended, "preview-" + mSelectedStyle + "-blended.png");
+                    }
+                    // Allow for another image capture to take place.
+                    processingButton = false;
+
+                    onStylizedImageCaptureFinished(sourceImage, blended);
                 }
         );
     }
 
+    /**
+     * Everything we want to do after the photo is taken should go here.
+     */
+    private void onStylizedImageCaptureFinished(Bitmap original, Bitmap stylized) {
+
+        // Upload image to firebase.
+    }
+
+    public Bitmap blendBitmaps(Bitmap styled, Bitmap original) {
+        Bitmap blended = Bitmap.createBitmap(styled.getWidth(), styled.getHeight(), styled.getConfig());
+        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+        paint.setAlpha(128);
+        Canvas canvas = new Canvas(blended);
+        canvas.drawBitmap(styled, new Matrix(), null);
+        canvas.drawBitmap(original, new Matrix(), paint);
+        return blended;
+    }
+
+
     int mSelectedStyle = 0;
     private void setStyle(int selectedStyle) {
-        mSelectedStyle = selectedStyle;
+        mSelectedStyle = selectedStyle % NUM_STYLES;
         // Image style is normally selected as an array of intensities from multiple existing source
         // styles.  In this case we're only picking one, and scaling it down so the person
         // in the photograph is recognizable.
         for (int i = 0; i < NUM_STYLES; i++) {
-            styleVals[i] = i == selectedStyle ? 1.00f : 0.0f;
+            styleVals[i] = i == mSelectedStyle ? 1.00f : 0.0f;
         }
     }
 
