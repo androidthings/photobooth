@@ -17,6 +17,7 @@ package com.example.androidthings.photobooth;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.media.Image;
 import android.os.Environment;
 import android.util.Log;
@@ -219,6 +220,23 @@ public class ImageUtils {
 
         return matrix;
     }
+
+    /**
+     *
+     * @param styled  The styled image to use as the base
+     * @param original The original image, to overlay at 50% opacity.
+     * @return
+     */
+    public static Bitmap blendBitmaps(Bitmap styled, Bitmap original) {
+        Bitmap blended = Bitmap.createBitmap(styled.getWidth(), styled.getHeight(), styled.getConfig());
+        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+        paint.setAlpha(128);
+        Canvas canvas = new Canvas(blended);
+        canvas.drawBitmap(styled, new Matrix(), null);
+        canvas.drawBitmap(original, new Matrix(), paint);
+        return blended;
+    }
+
 
 
     /**

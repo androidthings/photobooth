@@ -105,7 +105,7 @@ public class PhotoboothActivity extends Activity {
             if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
                 Toast.makeText(PhotoboothActivity.this, "Camera AND storage permission are required for this demo", Toast.LENGTH_LONG).show();
             }
-            requestPermissions(new String[] {PERMISSION_CAMERA, PERMISSION_STORAGE}, PERMISSIONS_REQUEST);
+            requestPermissions(new String[]{PERMISSION_CAMERA, PERMISSION_STORAGE}, PERMISSIONS_REQUEST);
         }
     }
 
@@ -119,6 +119,7 @@ public class PhotoboothActivity extends Activity {
 
     private Button mButton;
     private final String BUTTON_GPIO_PIN = "BCM23";
+
     private void initializeButton() {
         try {
             mButton = new Button(BUTTON_GPIO_PIN,
@@ -151,7 +152,7 @@ public class PhotoboothActivity extends Activity {
 
     protected void setOnButtonPressedListener(Button.OnButtonEventListener listener) {
         mButtonCallback = listener;
-        if(mButton != null) {
+        if (mButton != null) {
             mButton.setOnButtonEventListener(listener);
         }
     }
