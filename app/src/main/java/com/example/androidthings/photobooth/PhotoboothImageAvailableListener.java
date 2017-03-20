@@ -33,7 +33,7 @@ import static android.content.ContentValues.TAG;
  * Class that takes in preview frames and converts the image to Bitmaps to process with Tensorflow.
  */
 public class PhotoboothImageAvailableListener implements OnImageAvailableListener {
-    private static final int INPUT_SIZE = 256;
+    private static final int INPUT_SIZE = 480;
 
     private int sensorOrientation = 0;
 
@@ -45,6 +45,9 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
 
     private int previewWidth;
     private int previewHeight;
+
+    private int fullWidth;
+    private int fullHeight;
 
     private byte[][] cachedYuvBytes = new byte[3][];
     private int[] rgbBytes = null;
@@ -93,6 +96,8 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             }
 
             ImageUtils.convertImageToBitmap(image, previewWidth, previewHeight, rgbBytes, cachedYuvBytes);
+
+
 
 
             updateImageView(croppedBitmap, activity);

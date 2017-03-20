@@ -12,7 +12,7 @@ public class TensorflowStyler {
 
     Context mContext;
 
-    private static final int INPUT_SIZE = 256;
+    private static final int INPUT_SIZE = 480;
 
     private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
     private static final String INPUT_NODE = "input";
@@ -97,6 +97,4 @@ public class TensorflowStyler {
         bitmap.setPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
         Log.d(TAG, "stylizeBitmap() completed.");
     }
-
-
 }

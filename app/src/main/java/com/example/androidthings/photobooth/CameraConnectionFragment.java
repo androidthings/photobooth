@@ -45,8 +45,8 @@ import java.util.concurrent.TimeUnit;
 
 public class CameraConnectionFragment extends Fragment {
 
-    private static final int IMAGE_WIDTH = 320;
-    private static final int IMAGE_HEIGHT = 240;
+    private static final int IMAGE_WIDTH = 640;
+    private static final int IMAGE_HEIGHT = 480;
     private static final int CAMERA_LOCK_WAIT = 2500;
 
     private static final String TAG = "CameraConnection";

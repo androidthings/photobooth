@@ -20,28 +20,17 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.google.android.things.contrib.driver.button.Button;
-import com.google.android.things.pio.PeripheralManagerService;
-
-import java.io.IOException;
-import java.util.List;
-
 public class PhotoboothActivity extends Activity {
 
-    private static final String TAG = "CameraActivity";
+    private static final String TAG = "PhotoboothActivity";
 
     private static final int PERMISSIONS_REQUEST = 1;
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
     private static final String PERMISSION_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-
-    private boolean debug = false;
 
     // Fragments are initialized programmatically, so there's no ID's.  Keep references to them.
     CameraConnectionFragment cameraFragment = null;
@@ -60,21 +49,6 @@ public class PhotoboothActivity extends Activity {
         } else {
             requestPermission();
         }
-
-        PeripheralManagerService manager = new PeripheralManagerService();
-        List<String> portList = manager.getGpioList();
-        if (portList.isEmpty()) {
-            Log.i(TAG, "No GPIO port available on this device.");
-        } else {
-            Log.i(TAG, "List of available ports: " + portList);
-        }
-        initializeButton();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        destroyButton();
     }
 
     @Override
@@ -117,52 +91,7 @@ public class PhotoboothActivity extends Activity {
                 .commit();
     }
 
-    private Button mButton;
-    private final String BUTTON_GPIO_PIN = "BCM23";
-
-    private void initializeButton() {
-        try {
-            mButton = new Button(BUTTON_GPIO_PIN,
-                    Button.LogicState.PRESSED_WHEN_LOW);
-
-            mButtonCallback = (button, pressed) -> {
-                if (pressed) {
-                    Log.d(TAG, "Button pressed!");
-                }
-            };
-
-            mButton.setOnButtonEventListener(mButtonCallback);
-            Log.d(TAG, "Hardware button initialized.");
-        } catch (IOException e) {
-            Log.e(TAG, "button driver error", e);
-        }
-    }
-
-    private void destroyButton() {
-        if (mButton != null) {
-            try {
-                mButton.close();
-            } catch (IOException e) {
-                Log.e(TAG, "Button driver error", e);
-            }
-        }
-    }
-
-    private Button.OnButtonEventListener mButtonCallback;
-
-    protected void setOnButtonPressedListener(Button.OnButtonEventListener listener) {
-        mButtonCallback = listener;
-        if (mButton != null) {
-            mButton.setOnButtonEventListener(listener);
-        }
-    }
-
-
     public CameraConnectionFragment getCameraFragment() {
         return cameraFragment;
-    }
-
-    public boolean isDebug() {
-        return debug;
     }
 }
