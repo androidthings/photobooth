@@ -1,0 +1,10 @@
+{
+  "name": "functions",
+  "description": "Firebase Functions",
+  "dependencies": {
+    "@google-cloud/storage": "^1.0.0",
+    "firebase-admin": "^4.2.0",
+    "firebase-functions": "^0.5.4",
+    "twitter": "^1.7.0"
+  }
+}
