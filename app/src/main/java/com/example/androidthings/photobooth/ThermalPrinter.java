@@ -165,14 +165,18 @@ public class ThermalPrinter {
             addLineFeed(imageData, 1);
             print(imageData);
         }
-        printLn("Job's done!");
+    }
+
+    void printEmptyLines(int lines) {
+        ByteArrayOutputStream printerBuffer = getOutputStream();
+        addLineFeed(printerBuffer, lines);
+        print(printerBuffer);
     }
 
     void printLn(String text) {
         // The EscPosBuilder will take our formatted text and convert it to a byte array
         // understood as instructions and data by the printer.
         ByteArrayOutputStream printerBuffer = getOutputStream();
-        addLineFeed(printerBuffer, 1);
         writeToPrinterBuffer(printerBuffer, text.getBytes());
         addLineFeed(printerBuffer, 1);
         print(printerBuffer);
@@ -224,13 +228,16 @@ public class ThermalPrinter {
     public void printQrCode(String data, int size, String label) {
         Bitmap qrBitmap;
         try {
-            qrBitmap = generateQrCode("Hello World!", size);
+            printLn("Here's your photo!");
+            printEmptyLines(1);
+            qrBitmap = generateQrCode(data, size);
 
             Log.d(TAG, "Width: " + qrBitmap.getWidth() + ", Height: " + qrBitmap.getHeight());
 
             printImage(qrBitmap);
             if (label != null && !label.isEmpty()) {
                 printLn(label);
+                printEmptyLines(3);
             }
         } catch (WriterException e) {
             Log.d(TAG, "Exception: ", e);

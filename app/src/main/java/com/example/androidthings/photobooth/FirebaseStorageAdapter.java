@@ -6,13 +6,16 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -28,6 +31,10 @@ public class FirebaseStorageAdapter {
     private FirebaseAuth mAuth;
 
     FirebaseStorage mStorage = FirebaseStorage.getInstance();
+
+    public interface PhotoUploadedListener{
+        void onPhotoUploaded(Uri url);
+    }
 
     public FirebaseStorageAdapter() {
         mAuth = FirebaseAuth.getInstance();
@@ -86,7 +93,8 @@ public class FirebaseStorageAdapter {
         return stringBuilder.toString();
     }
 
-    UploadTask uploadBitmap(Bitmap bitmap, String prefix, String suffix) {
+    UploadTask uploadBitmap(Bitmap bitmap, String prefix, String suffix,
+                            PhotoUploadedListener listener) {
         String filename = getTimestampedFileName(prefix, suffix);
         StorageReference fileRef = getImagesStorageRef().child(filename);
 
@@ -94,7 +102,32 @@ public class FirebaseStorageAdapter {
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
         byte[] data = baos.toByteArray();
 
-        return fileRef.putBytes(data);
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("links")
+                .child("images")
+                .child(filename.substring(0,filename.length() - 4));
+
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot != null) {
+                    if (dataSnapshot.getValue() != null) {
+                        Uri shortUri = Uri.parse(dataSnapshot.getValue(String.class));
+                        Log.i(TAG, "Short URL generated! " + shortUri.toString());
+                        listener.onPhotoUploaded(shortUri);
+                        myRef.removeEventListener(this);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        });
+
+
+        UploadTask uploadTask = fileRef.putBytes(data);
+
+        return uploadTask;
     }
 
     UploadTask signInAndUploadBitmap(Bitmap bitmap, String prefix, String suffix) {
@@ -107,7 +140,7 @@ public class FirebaseStorageAdapter {
                         // chain to fail (which is good)
                         AuthResult result = task.getResult();
                         // Otherwise, do the storage thing
-                        return uploadBitmap(bitmap, prefix, suffix);
+                        return uploadBitmap(bitmap, prefix, suffix, null);
                     }
                 }).addOnSuccessListener(result -> {
             // Auth and upload succeeded

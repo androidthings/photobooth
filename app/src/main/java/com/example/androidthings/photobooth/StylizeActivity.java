@@ -17,18 +17,14 @@
 package com.example.androidthings.photobooth;
 
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.things.contrib.driver.button.Button;
-import com.google.firebase.storage.UploadTask;
+
 
 import java.io.IOException;
 
@@ -183,22 +179,13 @@ public class StylizeActivity extends PhotoboothActivity {
 
                 if (currStyledBitmap != null) {
                     runInBackground(() -> {
-                        OnCompleteListener listener = new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                                Uri downloadUri = task.getResult().getDownloadUrl();
-                                if (task.isSuccessful()) {
-                                    if (downloadUri != null) {
-                                        Log.d(TAG, "File uploaded!  Download at: " + downloadUri);
-                                    } else {
-                                        Log.d(TAG, "File was not successfully uploaded.");
-                                    }
-                                }
-                            }
-                        };
-
-                        mFirebaseAdapter.uploadBitmap(currStyledBitmap, "styled", null)
-                            .addOnCompleteListener(listener);
+                        FirebaseStorageAdapter.PhotoUploadedListener listener =
+                                url -> {
+                                    mPrinter.printQrCode(url.toString(), 200, url.toString());
+                                    Log.d(TAG, "Image uploaded successfully, printing shortcode: " +
+                                            url);
+                                };
+                        mFirebaseAdapter.uploadBitmap(currStyledBitmap, "styled", null, listener);
                         processingSecondaryButton = false;
                     });
 
@@ -319,8 +306,12 @@ public class StylizeActivity extends PhotoboothActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         destroyButtons();
+        if(mPrinter != null) {
+            mPrinter.close();
+            mPrinter = null;
+        }
+        super.onDestroy();
     }
 
     @Override
