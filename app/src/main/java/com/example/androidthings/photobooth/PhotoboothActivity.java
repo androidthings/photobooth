@@ -34,6 +34,15 @@ public class PhotoboothActivity extends Activity {
 
     // Fragments are initialized programmatically, so there's no ID's.  Keep references to them.
     CameraConnectionFragment cameraFragment = null;
+    ThermalPrinter mPrinter;
+
+    @Override
+    protected void onDestroy() {
+        if (mPrinter != null) {
+            mPrinter.close();
+        }
+        super.onDestroy();
+    }
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -49,6 +58,12 @@ public class PhotoboothActivity extends Activity {
         } else {
             requestPermission();
         }
+
+        mPrinter = new ThermalPrinter(this);
+    }
+
+    public ThermalPrinter getPrinter() {
+        return mPrinter;
     }
 
     @Override
