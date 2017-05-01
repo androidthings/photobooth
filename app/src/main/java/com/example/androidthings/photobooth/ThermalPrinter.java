@@ -1,11 +1,24 @@
+/*
+ * Copyright 2017 The Android Things Samples Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.example.androidthings.photobooth;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.YuvImage;
 import android.util.Log;
-import android.widget.ImageView;
 
 import com.google.android.things.pio.PeripheralManagerService;
 import com.google.android.things.pio.UartDevice;
@@ -20,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
+import java.util.List;
 
 public class ThermalPrinter {
 
@@ -28,7 +42,7 @@ public class ThermalPrinter {
     private UartDevice mDevice;
 
     // Pulled from calling PeripheralManagerService.getUartDeviceList().
-    private final String UART_DEVICE_NAME = "UART0";
+    private final String UART_DEVICE_NAME = "USB1-1.2";
 
     private final byte[] PRINTER_INITIALIZE = {0x1B, 0x40};
     private static final byte[] PRINTER_SELECT_BIT_IMAGE_MODE = {0x1B, 0x2A, 33};
@@ -51,10 +65,14 @@ public class ThermalPrinter {
     ThermalPrinter(Context c) {
         PeripheralManagerService manager = new PeripheralManagerService();
         try {
-            mDevice = manager.openUartDevice(UART_DEVICE_NAME);
-            configureUartFrame(mDevice);
+            List<String> devices = manager.getUartDeviceList();
+            if (devices.contains(UART_DEVICE_NAME)) {
+                Log.d(TAG, "Connecting to thermal printer at" + UART_DEVICE_NAME);
+                mDevice = manager.openUartDevice(UART_DEVICE_NAME);
+                configureUartFrame(mDevice);
+                configurePrinter();
+            }
 
-            configurePrinter();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -183,7 +201,7 @@ public class ThermalPrinter {
     }
 
     private synchronized void writeUartData(byte[] data) throws IOException {
-        // In the case of writing images, let's assume we shouldn't send more than 500 bytes
+        // In the case of writing images, let's assume we shouldn't send more than 400 bytes
         // at a time to avoid buffer overrun - At which point the thermal printer tends to
         // either lock up or print garbage.
         final int DEFAULT_CHUNK_SIZE = 400;

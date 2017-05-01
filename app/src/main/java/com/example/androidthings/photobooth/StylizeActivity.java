@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.example.androidthings.photobooth;
 
 import android.graphics.Bitmap;
@@ -112,7 +111,7 @@ public class StylizeActivity extends PhotoboothActivity {
                 }
 
                 // Tensorflow takes a while on these images, and we don't want an itchy trigger-finger
-                // (or trigger-voice, or whatever) locking up the UI with too many requests.
+                // (or trigger-voice, or whatever) locking up the CPU with too many requests.
                 // If one image is being worked on, ignore requests to process others.
                 synchronized (primaryButtonLock) {
                     if (processingPrimaryButton) {
@@ -132,16 +131,15 @@ public class StylizeActivity extends PhotoboothActivity {
                         return;
                     });
                 } else {
-                    mTensorflowStyler.setStyle(mTensorflowStyler.getSelectedStyle() + 1);
                     Bitmap bitmapToStylize = getCameraFragment().getPreviewBitmap();
                     if (bitmapToStylize != null) {
                         Log.d(TAG, "\tcalling stylize.");
-                        updateStylizedView(bitmapToStylize);
+                        stylizeAndDisplayBitmap(bitmapToStylize);
                     } else {
                         Log.d(TAG, "\tbitmapToStylize was null! NULLLL");
                     }
 
-                    Log.d(TAG, "\tupdateStylizedView called.");
+                    Log.d(TAG, "\tstylizeAndDisplayBitmap called.");
                 }
             };
             mStyleButton.setOnButtonEventListener(mStyleButtonCallback);
@@ -198,40 +196,40 @@ public class StylizeActivity extends PhotoboothActivity {
         }
     }
 
-    public void updateStylizedView(final Bitmap sourceImage) {
+    public void stylizeAndDisplayBitmap(final Bitmap sourceImage) {
         runInBackground(() -> {
             Bitmap stylizedImage = Bitmap.createBitmap(sourceImage);
             mTensorflowStyler.stylizeBitmap(stylizedImage);
+            mTensorflowStyler.setNextStyle();
             Bitmap blended = ImageUtils.blendBitmaps(stylizedImage, sourceImage);
             currStyledBitmap = blended;
             runOnUiThread(() -> {
                 if (stylizedImage != null) {
-                    ImageView stylizedView =
-                            (ImageView) findViewById(R.id.stylizedView);
+                    ImageView stylizedView = (ImageView) findViewById(R.id.stylizedView);
                     if (stylizedView != null) {
-
                         stylizedView.setImageBitmap(blended);
-                        Log.d(TAG, "stylizedView updated.");
-                    } else {
-                        Log.d(TAG, "stylizedView is null.");
                     }
                 } else {
-                    Log.d(TAG, "Bitmap sent to updateStylizedView is null.");
+                    Log.d(TAG, "Bitmap sent to stylizeAndDisplayBitmap is null.");
                 }
             });
 
             if (IMAGE_PREVIEW_DEBUG) {
-                int style = mTensorflowStyler.getSelectedStyle();
-                ImageUtils.saveBitmap(
-                        sourceImage, "preview-" + style + "-orig.png");
-                ImageUtils.saveBitmap(
-                        stylizedImage, "preview-" + style + "-styled.png");
-                ImageUtils.saveBitmap(
-                        blended, "preview-" + style + "-blended.png");
+                saveBitmapsForDebug(sourceImage, stylizedImage, blended);
             }
             // Allow for another image capture to take place.
             processingPrimaryButton = false;
         });
+    }
+
+    void saveBitmapsForDebug(Bitmap original, Bitmap stylized, Bitmap blended) {
+        int style = mTensorflowStyler.getSelectedStyle();
+        ImageUtils.saveBitmap(
+                original, "preview-" + style + "-orig.png");
+        ImageUtils.saveBitmap(
+                stylized, "preview-" + style + "-styled.png");
+        ImageUtils.saveBitmap(
+                blended, "preview-" + style + "-blended.png");
     }
 
     /**
@@ -250,7 +248,6 @@ public class StylizeActivity extends PhotoboothActivity {
         inferenceThread.quitSafely();
         try {
             inferenceThread.join();
-            inferenceThread = null;
             inferenceThread = null;
         } catch (final InterruptedException e) {
             Log.e(TAG, "Exception!");

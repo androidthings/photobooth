@@ -53,7 +53,7 @@ public class PhotoboothActivity extends Activity {
 
         if (hasPermission()) {
             if (null == savedInstanceState) {
-                setFragment();
+                loadCameraFragment();
             }
         } else {
             requestPermission();
@@ -73,7 +73,7 @@ public class PhotoboothActivity extends Activity {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    setFragment();
+                    loadCameraFragment();
                 } else {
                     requestPermission();
                 }
@@ -98,7 +98,7 @@ public class PhotoboothActivity extends Activity {
         }
     }
 
-    private void setFragment() {
+    private void loadCameraFragment() {
         cameraFragment = new CameraConnectionFragment();
         getFragmentManager()
                 .beginTransaction()

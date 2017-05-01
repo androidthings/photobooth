@@ -46,9 +46,6 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
     private int previewWidth;
     private int previewHeight;
 
-    private int fullWidth;
-    private int fullHeight;
-
     private byte[][] cachedYuvBytes = new byte[3][];
     private int[] rgbBytes = null;
 
@@ -130,7 +127,12 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
                             ImageView view = (ImageView) activity.findViewById(R.id.imageView);
                             if (view != null) {
                                 view.setImageBitmap(bmp);
+                                Bitmap oldBmp = mLatestBitmap;
                                 mLatestBitmap = bmp;
+
+                                // We're cycling through a *lot* of bitmaps.  Do some pro-active
+                                // cleaning...
+                                oldBmp.recycle();
                             } else {
                                 Log.d(TAG, "Not updating image view: View is null.");
                             }
@@ -145,7 +147,6 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
     }
 
     public Bitmap getLatestBitmap() {
-
         return mLatestBitmap;
     }
 }
