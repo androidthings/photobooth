@@ -242,7 +242,6 @@ public class ThermalPrinter {
         return new ByteArrayOutputStream();
     }
 
-
     public void printQrCode(String data, int size, String label) {
         Bitmap qrBitmap;
         try {

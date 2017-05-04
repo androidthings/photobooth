@@ -17,12 +17,29 @@ package com.example.androidthings.photobooth;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.support.annotation.NonNull;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.WindowManager;
-import android.widget.Toast;
+import android.widget.ImageView;
 
+import com.google.android.things.contrib.driver.button.Button;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import java.io.IOException;
+
+/**
+ * Entry point for the Photobooth application.
+ */
 public class PhotoboothActivity extends Activity {
 
     private static final String TAG = "PhotoboothActivity";
@@ -32,17 +49,61 @@ public class PhotoboothActivity extends Activity {
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
     private static final String PERMISSION_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
+    public static final String MESSAGE_RECEIVED = "MESSAGE_RECEIVED";
+
     // Fragments are initialized programmatically, so there's no ID's.  Keep references to them.
     CameraConnectionFragment cameraFragment = null;
+
     ThermalPrinter mPrinter;
 
-    @Override
-    protected void onDestroy() {
-        if (mPrinter != null) {
-            mPrinter.close();
-        }
-        super.onDestroy();
-    }
+    // For testing the artistic styles, will save the original image, the "stylized" image,
+    // and the blended combination of the two to device when this flag is set to true.
+    public static final boolean IMAGE_PREVIEW_DEBUG = false;
+
+    // For testing:  Just take one picture and apply all styles, saving images internally.
+    public static final boolean PREVIEW_DUMP_DEBUG = false;
+
+    TensorflowStyler mTensorflowStyler;
+
+    // Background threads specifically for Tensorflow
+    /**
+     * An additional thread for running inference so as not to block the camera.
+     */
+    private HandlerThread inferenceThread;
+
+    /**
+     * A {@link Handler} for running tasks in the background.
+     */
+    private Handler inferenceHandler;
+
+    // Physical GPIO-connected buttons.  Not UI buttons.
+    private Button mStyleButton;
+    private Button mSecondaryButton;
+
+    private final String PRIMARY_BUTTON_GPIO_PIN = "BCM23";
+    private final String SECONDARY_BUTTON_GPIO_PIN = "BCM24";
+
+    // Weak References.  Android Studio will hint that these can be converted to local variables,
+    // but that's a bad idea.
+    @SuppressWarnings("FieldCanBeLocal")
+    private Button.OnButtonEventListener mStyleButtonCallback, mSecondaryButtonCallback;
+
+    private FirebaseStorageAdapter mFirebaseAdapter;
+
+
+    private Bitmap mCurrSourceBitmap;
+
+    private Bitmap mCurrStyledBitmap;
+
+    // Depending on the button and how "noisy" the signal is, one physical button press can show
+    // up as two.  These locks are simple objects to be used for locking using "synchronized".
+    final int[] primaryButtonLock = new int[0];
+    final int[] secondaryButtonLock = new int[0];
+
+
+    boolean processingPrimaryButton = false;
+    boolean processingSecondaryButton = false;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -60,14 +121,19 @@ public class PhotoboothActivity extends Activity {
         }
 
         mPrinter = new ThermalPrinter(this);
-    }
 
-    public ThermalPrinter getPrinter() {
-        return mPrinter;
+        mTensorflowStyler = new TensorflowStyler(this);
+        mTensorflowStyler.initializeTensorFlow();
+
+        initializeButtons();
+
+        mFirebaseAdapter = new FirebaseStorageAdapter();
+
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
         switch (requestCode) {
             case PERMISSIONS_REQUEST: {
                 if (grantResults.length > 0
@@ -82,20 +148,13 @@ public class PhotoboothActivity extends Activity {
     }
 
     private boolean hasPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return checkSelfPermission(PERMISSION_CAMERA) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(PERMISSION_STORAGE) == PackageManager.PERMISSION_GRANTED;
-        } else {
-            return true;
-        }
+        return checkSelfPermission(PERMISSION_CAMERA) == PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(PERMISSION_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
-                Toast.makeText(PhotoboothActivity.this, "Camera AND storage permission are required for this demo", Toast.LENGTH_LONG).show();
-            }
-            requestPermissions(new String[]{PERMISSION_CAMERA, PERMISSION_STORAGE}, PERMISSIONS_REQUEST);
-        }
+        String[] permissionsToRequest = {PERMISSION_CAMERA, PERMISSION_STORAGE};
+        requestPermissions(permissionsToRequest, PERMISSIONS_REQUEST);
     }
 
     private void loadCameraFragment() {
@@ -109,4 +168,291 @@ public class PhotoboothActivity extends Activity {
     public CameraConnectionFragment getCameraFragment() {
         return cameraFragment;
     }
+
+    /**
+     *  Initialize a GPIO button button to iterate through different styles and display image on
+     *  screen.
+     */
+    protected void initializeStyleButton() {
+        try {
+            mStyleButton = new Button(PRIMARY_BUTTON_GPIO_PIN,
+                    Button.LogicState.PRESSED_WHEN_LOW);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (mStyleButton != null) {
+            mStyleButtonCallback = (button, pressed) -> {
+
+                if (!pressed) {
+                    return;
+                }
+
+                // Tensorflow takes a while on these images, and we don't want an itchy trigger-finger
+                // (or trigger-voice, or whatever) locking up the CPU with too many requests.
+                // If one image is being worked on, ignore requests to process others.
+                synchronized (primaryButtonLock) {
+                    if (processingPrimaryButton) {
+                        Log.d(TAG, "Primary button press registered, locked out..");
+                        return;
+                    } else {
+                        Log.d(TAG, "Primary button press registered, entering.");
+                        processingPrimaryButton = true;
+                    }
+                }
+
+                if (PREVIEW_DUMP_DEBUG) {
+                    runInBackground(() -> {
+                        Bitmap originalBitmap = getCameraFragment().getCurrentFrameCopy();
+                        mTensorflowStyler.saveStyleExamples(originalBitmap);
+                        processingPrimaryButton = false;
+                    });
+                } else {
+                    Bitmap bitmapToStylize = takePicture();
+
+                    if (bitmapToStylize != null) {
+                        Log.d(TAG, "\tcalling stylize.");
+                        stylizeAndDisplayBitmap(bitmapToStylize);
+                    } else {
+                        Log.d(TAG, "\tbitmapToStylize was null! NULLLL");
+                    }
+
+                    Log.d(TAG, "\tstylizeAndDisplayBitmap called.");
+                }
+            };
+            mStyleButton.setOnButtonEventListener(mStyleButtonCallback);
+        }
+    }
+
+    public Bitmap takePicture() {
+        mCurrSourceBitmap = getCameraFragment().getCurrentFrameCopy();
+
+        // Update the snapshot view, indicating to user that something has happened.
+        ImageView snapshotView = (ImageView) findViewById(R.id.stylizedView);
+        snapshotView.setImageBitmap(mCurrSourceBitmap);
+
+        return mCurrSourceBitmap;
+    }
+
+    public Bitmap getChosenSourcePhoto() {
+        return mCurrSourceBitmap;
+    }
+
+    /**
+     * Initialize a GPIO button to take the currently selected image and upload it to firebase.
+     */
+    private void initializeSecondaryButton() {
+        // Hook up a button to upload styled image to Firebase.
+        try {
+            mSecondaryButton = new Button(SECONDARY_BUTTON_GPIO_PIN,
+                    Button.LogicState.PRESSED_WHEN_LOW);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (mSecondaryButton != null) {
+            mSecondaryButtonCallback = (button, pressed) -> {
+                if (!pressed) {
+                    return;
+                }
+                // Locking mechanism until setDebounceDelay bugs are sorted out.
+                Log.d(TAG, "Secondary button pressed.");
+                synchronized (secondaryButtonLock) {
+                    if (processingSecondaryButton) {
+                        Log.d(TAG, "Secondary button press registered, locked out.");
+                        return;
+                    } else {
+                        Log.d(TAG, "Secondary button press registered, entering.");
+                        processingSecondaryButton = true;
+                    }
+                }
+                processChosenImage();
+            };
+            mSecondaryButton.setOnButtonEventListener(mSecondaryButtonCallback);
+        }
+    }
+
+    public void processChosenImage() {
+        if (mCurrStyledBitmap != null) {
+            runInBackground(() -> {
+                FirebaseStorageAdapter.PhotoUploadedListener listener =
+                        url -> {
+                            mPrinter.printQrCode(url.toString(), 200, url.toString());
+                            Log.d(TAG, "Image uploaded successfully, printing shortcode: " +
+                                    url);
+                        };
+                mFirebaseAdapter.uploadBitmap(mCurrStyledBitmap, "styled", null, listener);
+                processingSecondaryButton = false;
+            });
+
+        } else {
+            Log.d(TAG, "No bitmap to process.");
+            processingSecondaryButton = false;
+        }
+    }
+
+    public void stylizeAndDisplayBitmap(final Bitmap sourceImage) {
+        runInBackground(() -> {
+            Bitmap stylizedImage = Bitmap.createBitmap(sourceImage);
+            mTensorflowStyler.stylizeBitmap(stylizedImage);
+            mTensorflowStyler.setNextStyle();
+            Bitmap blended = ImageUtils.blendBitmaps(stylizedImage, sourceImage);
+            mCurrStyledBitmap = blended;
+            runOnUiThread(() -> {
+                if (stylizedImage != null) {
+                    ImageView snapshotView = (ImageView) findViewById(R.id.stylizedView);
+                    if (snapshotView != null) {
+                        snapshotView.setImageBitmap(blended);
+                    }
+                } else {
+                    Log.d(TAG, "Bitmap sent to stylizeAndDisplayBitmap is null.");
+                }
+            });
+
+            if (IMAGE_PREVIEW_DEBUG) {
+                saveBitmapsForDebug(sourceImage, stylizedImage, blended);
+            }
+            // Allow for another image capture to take place.
+            processingPrimaryButton = false;
+        });
+    }
+
+    void saveBitmapsForDebug(Bitmap original, Bitmap stylized, Bitmap blended) {
+        int style = mTensorflowStyler.getSelectedStyle();
+        ImageUtils.saveBitmap(
+                original, "preview-" + style + "-orig.png");
+        ImageUtils.saveBitmap(
+                stylized, "preview-" + style + "-styled.png");
+        ImageUtils.saveBitmap(
+                blended, "preview-" + style + "-blended.png");
+    }
+
+    /**
+     * Starts a background thread and its {@link Handler}.
+     */
+    private void startInferenceThread() {
+        inferenceThread = new HandlerThread("InferenceThread");
+        inferenceThread.start();
+        inferenceHandler = new Handler(inferenceThread.getLooper());
+    }
+
+    /**
+     * Stops the background thread and its {@link Handler}.
+     */
+    private void stopInferenceThread() {
+        inferenceThread.quitSafely();
+        try {
+            inferenceThread.join();
+            inferenceThread = null;
+        } catch (final InterruptedException e) {
+            Log.e(TAG, "Exception!");
+        }
+    }
+
+    @Override
+    public synchronized void onPause() {
+        Log.d(TAG, "onPause " + this);
+        if (!isFinishing()) {
+            Log.d(TAG, "Requesting finish");
+            finish();
+        }
+        // Unregister since the activity is paused.
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(
+                mMessageReceiver);
+        stopInferenceThread();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Register to receive messages.
+        // We are registering an observer (mMessageReceiver) to receive Intents
+        // with actions named "custom-event-name".
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mMessageReceiver, new IntentFilter(MESSAGE_RECEIVED));
+
+        FirebaseMessaging.getInstance().subscribeToTopic("photobooth-testing");
+
+        super.onResume();
+
+        startInferenceThread();
+    }
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // TODO Auto-generated method stub
+            // Get extra data included in the Intent
+            String message = intent.getStringExtra(FcmContract.KEY_FOR_COMMAND);
+            Log.d("receiver", "Got message: " + message);
+            switch (message) {
+                case FcmContract.COMMAND_CAPTURE:
+                    Log.d("receiver", "Capturing.");
+                    takePicture();
+                    break;
+                case FcmContract.COMMAND_STYLE:
+                    stylizeAndDisplayBitmap(mCurrSourceBitmap);
+                    break;
+                case FcmContract.GO_WITH_THIS_ONE:
+                    processChosenImage();
+                    break;
+            }
+        }
+    };
+
+    protected synchronized void runInBackground(final Runnable r) {
+        if (inferenceHandler != null) {
+            inferenceHandler.post(r);
+        }
+    }
+
+    private void initializeButtons() {
+        initializeStyleButton();
+        initializeSecondaryButton();
+        Log.d(TAG, "Hardware buttons initialized.");
+    }
+
+    private void destroyButtons() {
+        if (mStyleButton != null) {
+            try {
+                mStyleButton.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Button driver error", e);
+            }
+        }
+
+        if (mSecondaryButton != null) {
+            try {
+                mSecondaryButton.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Button driver error", e);
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        destroyButtons();
+        if(mPrinter != null) {
+            mPrinter.close();
+            mPrinter = null;
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mFirebaseAdapter.onStart();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mFirebaseAdapter.onStop();
+    }
+
+
 }

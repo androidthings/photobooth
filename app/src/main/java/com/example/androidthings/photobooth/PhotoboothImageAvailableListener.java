@@ -94,8 +94,10 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
 
             ImageUtils.convertImageToBitmap(image, previewWidth, previewHeight, rgbBytes, cachedYuvBytes);
 
-
-
+            if (croppedBitmap != null && rgbFrameBitmap != null) {
+                rgbFrameBitmap.setPixels(rgbBytes, 0, previewWidth, 0, 0, previewWidth, previewHeight);
+                ImageUtils.cropAndRescaleBitmap(rgbFrameBitmap, croppedBitmap, sensorOrientation);
+            }
 
             updateImageView(croppedBitmap, activity);
 
@@ -107,12 +109,6 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             Log.e(TAG, "Exception!");
             Trace.endSection();
             return;
-        }
-
-        if (croppedBitmap != null && rgbFrameBitmap != null) {
-            rgbFrameBitmap.setPixels(rgbBytes, 0, previewWidth, 0, 0, previewWidth, previewHeight);
-            ImageUtils.cropAndRescaleBitmap(rgbFrameBitmap, croppedBitmap, sensorOrientation);
-
         }
 
         computing = false;
@@ -127,12 +123,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
                             ImageView view = (ImageView) activity.findViewById(R.id.imageView);
                             if (view != null) {
                                 view.setImageBitmap(bmp);
-                                Bitmap oldBmp = mLatestBitmap;
                                 mLatestBitmap = bmp;
-
-                                // We're cycling through a *lot* of bitmaps.  Do some pro-active
-                                // cleaning...
-                                oldBmp.recycle();
                             } else {
                                 Log.d(TAG, "Not updating image view: View is null.");
                             }
@@ -140,7 +131,6 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
                             Log.d(TAG, "bmp is null, not updating image view.");
                         }
                     });
-
         } else {
             Log.d(TAG, "Activity is null! NULLLL");
         }

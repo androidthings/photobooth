@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example.androidthings.photobooth;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -23,9 +25,11 @@ import android.os.Environment;
 import android.util.Log;
 
 import junit.framework.Assert;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
+
 /**
  * Utility class for manipulating images.
  **/
@@ -36,6 +40,7 @@ public class ImageUtils {
     // This value is 2 ^ 18 - 1, and is used to clamp the RGB values before their ranges
     // are normalized to eight bits.
     static final int kMaxChannelValue = 262143;
+
     /**
      * Utility method to compute the allocated size in bytes of a YUV420SP image
      * of the given dimensions.
@@ -48,6 +53,7 @@ public class ImageUtils {
         final int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
         return ySize + uvSize;
     }
+
     /**
      * Saves a Bitmap object to disk for analysis.
      *
@@ -74,6 +80,7 @@ public class ImageUtils {
             Log.e(TAG, "Exception!", e);
         }
     }
+
     public static void convertImageToBitmap(Image image, int width, int height, int[] output,
                                             byte[][] cachedYuvBytes) {
         if (cachedYuvBytes == null || cachedYuvBytes.length != 3) {
@@ -87,6 +94,7 @@ public class ImageUtils {
         convertYUV420ToARGB8888(cachedYuvBytes[0], cachedYuvBytes[1], cachedYuvBytes[2],
                 width, height, yRowStride, uvRowStride, uvPixelStride, output);
     }
+
     private static void convertYUV420ToARGB8888(byte[] yData, byte[] uData, byte[] vData, int width, int height,
                                                 int yRowStride, int uvRowStride, int uvPixelStride, int[] out) {
         int i = 0;
@@ -104,9 +112,11 @@ public class ImageUtils {
             }
         }
     }
+
     private static int convertByteToInt(byte[] arr, int pos) {
         return arr[pos] & 0xFF;
     }
+
     private static int YUV2RGB(int nY, int nU, int nV) {
         nY -= 16;
         nU -= 128;
@@ -128,6 +138,7 @@ public class ImageUtils {
         nB = (nB >> 10) & 0xff;
         return 0xff000000 | (nR << 16) | (nG << 8) | nB;
     }
+
     private static void fillBytes(final Image.Plane[] planes, final byte[][] yuvBytes) {
         // Because of the variable row stride it's not possible to know in
         // advance the actual necessary dimensions of the yuv planes.
@@ -139,6 +150,7 @@ public class ImageUtils {
             buffer.get(yuvBytes[i]);
         }
     }
+
     public static void cropAndRescaleBitmap(final Bitmap src, final Bitmap dst, int sensorOrientation) {
         Assert.assertEquals(dst.getWidth(), dst.getHeight());
         final float minDim = Math.min(src.getWidth(), src.getHeight());
@@ -163,14 +175,14 @@ public class ImageUtils {
      * Returns a transformation matrix from one reference frame into another.
      * Handles cropping (if maintaining aspect ratio is desired) and rotation.
      *
-     * @param srcWidth Width of source frame.
-     * @param srcHeight Height of source frame.
-     * @param dstWidth Width of destination frame.
-     * @param dstHeight Height of destination frame.
-     * @param applyRotation Amount of rotation to apply from one frame to another.
-     *  Must be a multiple of 90.
+     * @param srcWidth            Width of source frame.
+     * @param srcHeight           Height of source frame.
+     * @param dstWidth            Width of destination frame.
+     * @param dstHeight           Height of destination frame.
+     * @param applyRotation       Amount of rotation to apply from one frame to another.
+     *                            Must be a multiple of 90.
      * @param maintainAspectRatio If true, will ensure that scaling in x and y remains constant,
-     * cropping the image if necessary.
+     *                            cropping the image if necessary.
      * @return The transformation fulfilling the desired requirements.
      */
     public static Matrix getTransformationMatrix(
@@ -222,8 +234,7 @@ public class ImageUtils {
     }
 
     /**
-     *
-     * @param styled  The styled image to use as the base
+     * @param styled   The styled image to use as the base
      * @param original The original image, to overlay at 50% opacity.
      * @return
      */
@@ -237,17 +248,15 @@ public class ImageUtils {
         return blended;
     }
 
-
-
     /**
      * Converts YUV420 semi-planar data to ARGB 8888 data using the supplied width
      * and height. The input and output must already be allocated and non-null.
      * For efficiency, no error checking is performed.
      *
-     * @param input The array of YUV 4:2:0 input data.
-     * @param output A pre-allocated array for the ARGB 8:8:8:8 output data.
-     * @param width The width of the input image.
-     * @param height The height of the input image.
+     * @param input    The array of YUV 4:2:0 input data.
+     * @param output   A pre-allocated array for the ARGB 8:8:8:8 output data.
+     * @param width    The width of the input image.
+     * @param height   The height of the input image.
      * @param halfSize If true, downsample to 50% in each dimension, otherwise not.
      */
     public static native void convertYUV420SPToARGB8888(
@@ -262,10 +271,10 @@ public class ImageUtils {
      * @param u
      * @param v
      * @param uvPixelStride
-     * @param width The width of the input image.
-     * @param height The height of the input image.
-     * @param halfSize If true, downsample to 50% in each dimension, otherwise not.
-     * @param output A pre-allocated array for the ARGB 8:8:8:8 output data.
+     * @param width         The width of the input image.
+     * @param height        The height of the input image.
+     * @param halfSize      If true, downsample to 50% in each dimension, otherwise not.
+     * @param output        A pre-allocated array for the ARGB 8:8:8:8 output data.
      */
     public static native void convertYUV420ToARGB8888(
             byte[] y,
@@ -284,9 +293,9 @@ public class ImageUtils {
      * and height. The input and output must already be allocated and non-null.
      * For efficiency, no error checking is performed.
      *
-     * @param input The array of YUV 4:2:0 input data.
+     * @param input  The array of YUV 4:2:0 input data.
      * @param output A pre-allocated array for the RGB 5:6:5 output data.
-     * @param width The width of the input image.
+     * @param width  The width of the input image.
      * @param height The height of the input image.
      */
     public static native void convertYUV420SPToRGB565(
@@ -297,9 +306,9 @@ public class ImageUtils {
      * instance, in creating data to feed the classes that rely on raw camera
      * preview frames.
      *
-     * @param input An array of input pixels in ARGB8888 format.
+     * @param input  An array of input pixels in ARGB8888 format.
      * @param output A pre-allocated array for the YUV420SP output data.
-     * @param width The width of the input image.
+     * @param width  The width of the input image.
      * @param height The height of the input image.
      */
     public static native void convertARGB8888ToYUV420SP(
@@ -310,9 +319,9 @@ public class ImageUtils {
      * instance, in creating data to feed the classes that rely on raw camera
      * preview frames.
      *
-     * @param input An array of input pixels in RGB565 format.
+     * @param input  An array of input pixels in RGB565 format.
      * @param output A pre-allocated array for the YUV420SP output data.
-     * @param width The width of the input image.
+     * @param width  The width of the input image.
      * @param height The height of the input image.
      */
     public static native void convertRGB565ToYUV420SP(
