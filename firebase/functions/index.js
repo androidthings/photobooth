@@ -31,16 +31,16 @@ admin.initializeApp(functions.config().firebase);
  * Twitter Info
  * https://apps.twitter.com/app/13660027
  */
- var TWTR_CONSUMER_KEY = 'INSERT KEY HERE';
- var TWTR_CONSUMER_SECRET = 'INSERT CONSUMER SECRET HERE';
- var TWTR_ACCESS_TOKEN_KEY = 'INSERT ACCESS TOKEN HERE';
- var TWTR_ACCESS_TOKEN_SECRET = 'INSERT TOKEN SECRET HERE';
+ var TWTR_CONSUMER_KEY = functions.config().twitter.consumer_key;
+ var TWTR_CONSUMER_SECRET = functions.config().twitter.consumer_secret;
+ var TWTR_ACCESS_TOKEN_KEY = functions.config().twitter.access_token_key;
+ var TWTR_ACCESS_TOKEN_SECRET = functions.config().twitter.access_token_secret;
 
 /**
  * API key for the Google URL shortener API
  * https://developers.google.com/url-shortener/v1/getting_started#APIKey
  */
-var URL_SHORTENER_API_KEY = 'INSERT API KEY HERE';
+var URL_SHORTENER_API_KEY = functions.config().shorturl.key;
 
 /**
  * Function executes on every storage object change.
