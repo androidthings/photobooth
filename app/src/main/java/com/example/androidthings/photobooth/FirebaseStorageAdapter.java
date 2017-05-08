@@ -22,7 +22,10 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.Continuation;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -32,12 +35,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 
 public class FirebaseStorageAdapter {
 
@@ -109,7 +115,7 @@ public class FirebaseStorageAdapter {
     }
 
     UploadTask uploadBitmap(Bitmap bitmap, String prefix, String suffix,
-                            PhotoUploadedListener listener) {
+                            PhotoUploadedListener listener, boolean share) {
         String filename = getTimestampedFileName(prefix, suffix);
         StorageReference fileRef = getImagesStorageRef().child(filename);
 
@@ -121,6 +127,8 @@ public class FirebaseStorageAdapter {
         DatabaseReference myRef = database.getReference("links")
                 .child("images")
                 .child(filename.substring(0,filename.length() - 4));
+
+        // Attach metadata
 
         myRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -139,24 +147,39 @@ public class FirebaseStorageAdapter {
             public void onCancelled(DatabaseError databaseError) {}
         });
 
+        Log.d(TAG, "Uploading file.");
+        UploadTask uploadTask;
+        if (share) {
+            StorageMetadata metadata = new StorageMetadata.Builder()
+                    .setCustomMetadata("tweetme", "true")
+                    .build();
 
-        UploadTask uploadTask = fileRef.putBytes(data);
+            fileRef.updateMetadata(metadata);
+            uploadTask = fileRef.putBytes(data, metadata);
+        } else {
+            uploadTask = fileRef.putBytes(data);
+        }
 
+        uploadTask.addOnFailureListener(e -> Log.d(TAG, "Upload Task Failed."));
         return uploadTask;
     }
 
-    UploadTask signInAndUploadBitmap(Bitmap bitmap, String prefix, String suffix) {
+    void uploadBitmaps(Bitmap original, Bitmap styled,
+                       PhotoUploadedListener origListener, PhotoUploadedListener styledListener) {
+            uploadBitmap(original, "original", null, origListener,false);
+            uploadBitmap(styled, "styled", null, styledListener, true);
+    }
+
+
+
+    UploadTask signInAndUploadBitmap(Bitmap bitmap, String prefix, String suffix, boolean share) {
         UploadTask uploadTask = (UploadTask) mAuth.signInAnonymously()
-                .continueWithTask(new Continuation<AuthResult, Task<UploadTask.TaskSnapshot>>() {
-                    @Override
-                    public Task<UploadTask.TaskSnapshot> then(@NonNull Task<AuthResult> task)
-                            throws Exception {
-                        // If task failed, this will throw an Exception and cause the whole task
-                        // chain to fail (which is good)
-                        AuthResult result = task.getResult();
-                        // Otherwise, do the storage thing
-                        return uploadBitmap(bitmap, prefix, suffix, null);
-                    }
+                .continueWithTask(task -> {
+                    // If task failed, this will throw an Exception and cause the whole task
+                    // chain to fail (which is good)
+                    AuthResult result = task.getResult();
+                    // Otherwise, do the storage thing
+                    return uploadBitmap(bitmap, prefix, suffix, null, share);
                 }).addOnSuccessListener(result -> {
             // Auth and upload succeeded
             Log.d(TAG, "Both Auth and upload succeeded, hooray!");
