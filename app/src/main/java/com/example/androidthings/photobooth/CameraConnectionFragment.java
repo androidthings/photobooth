@@ -153,14 +153,23 @@ public class CameraConnectionFragment extends Fragment {
             };
 
     @Override
-    public View onCreateView(
-            final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
         return inflater.inflate(R.layout.camera_connection_fragment_stylize, container, false);
     }
 
     @Override
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
-        Log.d(TAG, "Preview started.");
+        if (BuildConfig.SHOW_DEBUG_BUTTONS) {
+            view.findViewById(R.id.btn_capture).setVisibility(View.VISIBLE);
+            view.findViewById(R.id.btn_capture).setOnClickListener(v -> {
+                ((PhotoboothActivity)getActivity()).stylizePicture();
+            });
+            view.findViewById(R.id.btn_preview_layout).setVisibility(View.VISIBLE);
+            view.findViewById(R.id.btn_preview_layout).setOnClickListener(v -> {
+                ((PhotoboothActivity)getActivity()).previewLayout();
+            });
+        }
         startPreview();
     }
 
@@ -246,8 +255,10 @@ public class CameraConnectionFragment extends Fragment {
     }
 
     public void startPreview() {
+        Log.d(TAG, "Preview started.");
         startBackgroundThread();
-        CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+        CameraManager manager =
+                (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         String[] camIds;
 
         try {

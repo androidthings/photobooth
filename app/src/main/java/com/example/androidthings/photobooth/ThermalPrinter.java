@@ -165,8 +165,10 @@ public class ThermalPrinter {
                     // If we go past the bottom of the image, just send white pixels so the printer
                     // doesn't do anything.  Everything still needs to be sent in sets of 3 rows.
                     pixelSlice[0] = bitmap.getPixel(col, row + rowOffset);
-                    pixelSlice[1] = (pixel2Row >= bitmap.getHeight()) ? Color.WHITE : bitmap.getPixel(col, pixel2Row);
-                    pixelSlice[2] = (pixel3Row >= bitmap.getHeight()) ? Color.WHITE : bitmap.getPixel(col, pixel3Row);
+                    pixelSlice[1] = (pixel2Row >= bitmap.getHeight()) ?
+                            Color.WHITE : bitmap.getPixel(col, pixel2Row);
+                    pixelSlice[2] = (pixel3Row >= bitmap.getHeight()) ?
+                            Color.WHITE : bitmap.getPixel(col, pixel3Row);
 
                     boolean[] isDark = {pixelSlice[0] == Color.BLACK,
                             pixelSlice[1] == Color.BLACK,
@@ -174,9 +176,9 @@ public class ThermalPrinter {
 
                     // Towing that fine line between "should I forloop or not".  This will only
                     // ever be 3 elements deep.
-                    if(isDark[0]) bandBytes[0] |= 1 << (7 - rowOffset);
-                    if(isDark[1]) bandBytes[1] |= 1 << (7 - rowOffset);
-                    if(isDark[2]) bandBytes[2] |= 1 << (7 - rowOffset);
+                    if (isDark[0]) bandBytes[0] |= 1 << (7 - rowOffset);
+                    if (isDark[1]) bandBytes[1] |= 1 << (7 - rowOffset);
+                    if (isDark[2]) bandBytes[2] |= 1 << (7 - rowOffset);
                 }
                 writeToPrinterBuffer(imageData, bandBytes);
             }
@@ -274,7 +276,8 @@ public class ThermalPrinter {
 
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
 
-        BitMatrix bitMatrix = qrCodeWriter.encode(myCodeText, BarcodeFormat.QR_CODE, size, size, hintMap);
+        BitMatrix bitMatrix = qrCodeWriter.encode(myCodeText, BarcodeFormat.QR_CODE, size, size,
+                hintMap);
         int width = bitMatrix.getWidth();
 
         Bitmap bmp = Bitmap.createBitmap(width, width, Bitmap.Config.RGB_565);

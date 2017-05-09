@@ -16,4 +16,6 @@
 -->
 <resources>
     <color name="control_background">#cc4285f4</color>
+    <color name="lightish_blue">#ff536dfe</color>
+    <color name="aqua_marine">#ff1ce8b5</color>
 </resources>

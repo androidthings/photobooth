@@ -24,6 +24,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -33,6 +34,7 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
+import com.example.androidthings.photobooth.PhotoStripBuilder.PhotoStripSpec;
 import com.google.android.things.contrib.driver.button.Button;
 import com.google.firebase.messaging.FirebaseMessaging;
 
@@ -63,6 +65,9 @@ public class PhotoboothActivity extends Activity {
 
     // For testing:  Just take one picture and apply all styles, saving images internally.
     public static final boolean PREVIEW_DUMP_DEBUG = false;
+
+    private static final String TEST_LINK1 = "https://goo.gl/TFK7pt";
+    private static final String TEST_LINK2 = "https://goo.gl/f9BGb4";
 
     TensorflowStyler mTensorflowStyler;
 
@@ -105,6 +110,7 @@ public class PhotoboothActivity extends Activity {
     boolean processingPrimaryButton = false;
     boolean processingSecondaryButton = false;
 
+    private PhotoStripBuilder mPhotoStripBuilder;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -130,11 +136,12 @@ public class PhotoboothActivity extends Activity {
 
         mFirebaseAdapter = new FirebaseStorageAdapter();
 
+        mPhotoStripBuilder = new PhotoStripBuilder(this);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
+            @NonNull int[] grantResults) {
         switch (requestCode) {
             case PERMISSIONS_REQUEST: {
                 if (grantResults.length > 0
@@ -179,49 +186,15 @@ public class PhotoboothActivity extends Activity {
             mStyleButton = new Button(PRIMARY_BUTTON_GPIO_PIN,
                     Button.LogicState.PRESSED_WHEN_LOW);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "initializeStyleButton error", e);
         }
 
         if (mStyleButton != null) {
             mStyleButtonCallback = (button, pressed) -> {
-
                 if (!pressed) {
                     return;
                 }
-
-                // Tensorflow takes a while on these images, and we don't want an itchy trigger-finger
-                // (or trigger-voice, or whatever) locking up the CPU with too many requests.
-                // If one image is being worked on, ignore requests to process others.
-                synchronized (primaryButtonLock) {
-                    if (processingPrimaryButton) {
-                        Log.d(TAG, "Primary button press registered, locked out..");
-                        return;
-                    } else {
-                        Log.d(TAG, "Primary button press registered, entering.");
-                        processingPrimaryButton = true;
-                    }
-                }
-
-                if (PREVIEW_DUMP_DEBUG) {
-                    runInBackground(() -> {
-                        Bitmap originalBitmap = getCameraFragment().getCurrentFrameCopy();
-                        mTensorflowStyler.saveStyleExamples(originalBitmap);
-                        processingPrimaryButton = false;
-                    });
-                } else {
-                    Bitmap bitmapToStylize = takePicture();
-
-                    if (bitmapToStylize != null) {
-                        Log.d(TAG, "\tcalling stylize.");
-                        stylizeAndDisplayBitmap(bitmapToStylize);
-                        cameraFragment.closeCamera();
-                        cameraFragment.startPreview();
-                    } else {
-                        Log.d(TAG, "\tbitmapToStylize was null! NULLLL");
-                    }
-
-                    Log.d(TAG, "\tstylizeAndDisplayBitmap called.");
-                }
+                stylizePicture();
             };
             mStyleButton.setOnButtonEventListener(mStyleButtonCallback);
         }
@@ -237,6 +210,42 @@ public class PhotoboothActivity extends Activity {
         return mCurrSourceBitmap;
     }
 
+    protected void stylizePicture() {
+        // Tensorflow takes a while on these images, and we don't want an itchy trigger-finger
+        // (or trigger-voice, or whatever) locking up the CPU with too many requests. If one image
+        // is being worked on, ignore requests to process others.
+        synchronized (primaryButtonLock) {
+            if (processingPrimaryButton) {
+                Log.d(TAG, "Primary button press registered, locked out..");
+                return;
+            } else {
+                Log.d(TAG, "Primary button press registered, entering.");
+                processingPrimaryButton = true;
+            }
+        }
+
+        if (PREVIEW_DUMP_DEBUG) {
+            runInBackground(() -> {
+                Bitmap originalBitmap = getCameraFragment().getCurrentFrameCopy();
+                mTensorflowStyler.saveStyleExamples(originalBitmap);
+                processingPrimaryButton = false;
+            });
+        } else {
+            Bitmap bitmapToStylize = takePicture();
+
+            if (bitmapToStylize != null) {
+                Log.d(TAG, "\tcalling stylize.");
+                stylizeAndDisplayBitmap(bitmapToStylize);
+                cameraFragment.closeCamera();
+                cameraFragment.startPreview();
+            } else {
+                Log.d(TAG, "\tbitmapToStylize was null! NULLLL");
+            }
+
+            Log.d(TAG, "\tstylizeAndDisplayBitmap called.");
+        }
+    }
+
     public Bitmap getChosenSourcePhoto() {
         return mCurrSourceBitmap;
     }
@@ -250,7 +259,7 @@ public class PhotoboothActivity extends Activity {
             mSecondaryButton = new Button(SECONDARY_BUTTON_GPIO_PIN,
                     Button.LogicState.PRESSED_WHEN_LOW);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "initializeSecondaryButton error", e);
         }
 
         if (mSecondaryButton != null) {
@@ -376,6 +385,29 @@ public class PhotoboothActivity extends Activity {
                 blended, "preview-" + style + "-blended.png");
     }
 
+    protected void previewLayout() {
+        final PhotoStripSpec spec = new PhotoStripSpec(mCurrSourceBitmap, mCurrStyledBitmap,
+                TEST_LINK1, TEST_LINK2);
+        final LayoutPreviewFragment previewFragment = new LayoutPreviewFragment();
+        getFragmentManager()
+                .beginTransaction()
+                .addToBackStack(null)
+                .replace(R.id.container, previewFragment)
+                .commit();
+
+        new AsyncTask<Void, Void, Bitmap>() {
+            @Override
+            protected Bitmap doInBackground(Void... params) {
+                return mPhotoStripBuilder.createPhotoStrip(spec);
+            }
+
+            @Override
+            protected void onPostExecute(Bitmap bitmap) {
+                previewFragment.preview(bitmap);
+            }
+        }.execute();
+    }
+
     /**
      * Starts a background thread and its {@link Handler}.
      */
@@ -424,15 +456,12 @@ public class PhotoboothActivity extends Activity {
 
         FirebaseMessaging.getInstance().subscribeToTopic("io-photobooth");
 
-        super.onResume();
-
         startInferenceThread();
     }
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // TODO Auto-generated method stub
             // Get extra data included in the Intent
             String message = intent.getStringExtra(FcmContract.KEY_FOR_COMMAND);
             Log.d("receiver", "Got message: " + message);
@@ -484,7 +513,7 @@ public class PhotoboothActivity extends Activity {
     @Override
     protected void onDestroy() {
         destroyButtons();
-        if(mPrinter != null) {
+        if (mPrinter != null) {
             mPrinter.close();
             mPrinter = null;
         }

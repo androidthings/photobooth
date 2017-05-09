@@ -60,8 +60,8 @@ public class ImageUtils {
      * @param bitmap The bitmap to save.
      */
     public static void saveBitmap(final Bitmap bitmap, String fname) {
-        final String root =
-                Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "tensorflow";
+        final String root = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + File.separator + "tensorflow";
         final File myDir = new File(root);
         if (!myDir.mkdirs()) {
             Log.i(TAG, "Make dir failed");
@@ -82,7 +82,7 @@ public class ImageUtils {
     }
 
     public static void convertImageToBitmap(Image image, int width, int height, int[] output,
-                                            byte[][] cachedYuvBytes) {
+            byte[][] cachedYuvBytes) {
         if (cachedYuvBytes == null || cachedYuvBytes.length != 3) {
             cachedYuvBytes = new byte[3][];
         }
@@ -91,12 +91,12 @@ public class ImageUtils {
         final int yRowStride = planes[0].getRowStride();
         final int uvRowStride = planes[1].getRowStride();
         final int uvPixelStride = planes[1].getPixelStride();
-        convertYUV420ToARGB8888(cachedYuvBytes[0], cachedYuvBytes[1], cachedYuvBytes[2],
-                width, height, yRowStride, uvRowStride, uvPixelStride, output);
+        convertYUV420ToARGB8888(cachedYuvBytes[0], cachedYuvBytes[1], cachedYuvBytes[2], width,
+                height, yRowStride, uvRowStride, uvPixelStride, output);
     }
 
-    private static void convertYUV420ToARGB8888(byte[] yData, byte[] uData, byte[] vData, int width, int height,
-                                                int yRowStride, int uvRowStride, int uvPixelStride, int[] out) {
+    private static void convertYUV420ToARGB8888(byte[] yData, byte[] uData, byte[] vData, int width,
+            int height, int yRowStride, int uvRowStride, int uvPixelStride, int[] out) {
         int i = 0;
         for (int y = 0; y < height; y++) {
             int pY = yRowStride * y;

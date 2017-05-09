@@ -13,21 +13,48 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal">
 
-    <ImageView
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-        android:id="@+id/imageView"
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/stylizedView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_capture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"/>
+        android:layout_gravity="bottom|start"
+        android:text="CLICK"
+        android:textSize="24sp"
+        android:visibility="gone"
+        tools:layout_editor_absoluteX="0dp" />
 
-    <ImageView
-        android:id="@+id/stylizedView"
+    <Button
+        android:id="@+id/btn_preview_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"/>
-</LinearLayout>
+        android:layout_gravity="bottom|end"
+        android:text="LAYOUT"
+        android:textSize="24sp"
+        android:visibility="gone"
+        tools:layout_editor_absoluteX="592dp" />
+</FrameLayout>

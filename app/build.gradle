@@ -2,8 +2,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion '25.0.0'
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
     defaultConfig {
         applicationId "com.example.androidthings.photobooth"
         minSdkVersion 24
@@ -12,6 +12,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
+        buildConfigField "boolean", "SHOW_DEBUG_BUTTONS", "false"
     }
     buildTypes {
         release {
@@ -58,10 +59,10 @@ dependencies {
     })
     testCompile 'junit:junit:4.12'
 
-    compile 'com.android.support:support-v13:24.2.0'
+    compile 'com.android.support:support-v13:25.3.1'
     compile(name: 'Tensorflow-Android-Inference-alpha-debug', ext: 'aar')
 
-    provided 'com.google.android.things:androidthings:0.2-devpreview'
+    provided 'com.google.android.things:androidthings:0.3-devpreview'
     compile 'com.google.android.things.contrib:driver-button:0.2'
 
     compile 'com.google.firebase:firebase-auth:10.2.4'
