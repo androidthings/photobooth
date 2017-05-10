@@ -61,6 +61,9 @@ PhotoHandler.prototype.storageObjectChanged = function(event) {
         return;
     }
 
+    // Determine if this picture should be tweeted
+    var tweetMe = (object.metadata && object.metadata.tweetme);
+
     // Construct a public URL to the file
     var publicUrl = this.getPublicUrl(object);
     console.log('Public URL: ', publicUrl);
@@ -74,8 +77,8 @@ PhotoHandler.prototype.storageObjectChanged = function(event) {
             // Write to Firebase RTDB
             var firebasePromise = that.writeShortUrlToDatabase(object, shortUrl);
 
-            // Tweet the image
-            var tweetPromise = that.tweetImage(object, shortUrl);
+            // Tweet the image (if required)
+            var tweetPromise = tweetMe ? that.tweetImage(object, shortUrl) : Promise.resolve();
 
             return Promise.all([firebasePromise, tweetPromise]);
         });
