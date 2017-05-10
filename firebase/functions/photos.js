@@ -25,7 +25,7 @@ var fs = require('fs');
 /**
  * Initialize Firebase Admin SDK.
  */
-admin.initializeApp(functions.config().firebase);
+admin.initializeApp(functions.config().firebase, 'photoProcess');
 
 /**
  * Twitter Info

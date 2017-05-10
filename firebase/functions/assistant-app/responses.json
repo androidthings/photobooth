@@ -1,0 +1,67 @@
+{
+  "WELCOME":[
+    ["Hello, I am the Google I/O 17 photobooth!", 2230]
+  ],
+  "TAKE_PICTURE": [
+    ["3, 2, 1, **shutter**", 2620],
+    ["3, 2, 1, Chee ee eee eee ee eee eee eee ! **shutter**", 4900],
+    ["5, 4, 3, 2, 1, okay, your car has arrived ... Kidding ... **shutter**Just took the picture,Didn’t order you a car", 8380],
+    ["3, 2, silliest face you’ve got, 1 **shutter**", 4010],
+    ["3, 2, don’t look so serious, you’re in a talking photobooth ... 1 , **shutter**", 6340],
+    ["3, 2, 1, FREEZE! ... Er,sorry, I meant cheese **shutter**", 6820],
+    ["Okay, 3, 2, 1 ...  Dagnabbit the shutter is stuck ... , uhh **shutter**", 6890],
+    ["Okay, 1,2, 2 and a half,3 and a half ... wait ... 3?  ... Do we go on **shutter**", 9050],
+    ["Okay, taking a picture, Releasing laughing gas in 5, 4, 3 ... ... ... **shutter**", 6700],
+    ["1, 2,3... 4 ... , **shutter**", 4200]
+  ],
+  "APPROVAL_INQUIRY":[
+    "Do you like it?",
+    "How do you like it?",
+    "What do you think?",
+    "Does it look good?"
+  ],
+  "SELECTING_PHOTO":[
+    "Got it, uploading your photo.  I'm printing the URL and the photo for you now."
+  ],
+  "END":[
+    "Ok, bye.  Just say OK Google talk to photobooth if you want to take another picture."
+  ],
+  "ABOUT": [
+    "I'm put together with lots of different parts: I'm talking to you with a Google Home through an Assistant App built with Actions on Google and powered by Firebase functions.  The camera and screen are connected to my brain which is kept in a Raspberry Pi 3 running Android Things and Tensor Flow.  You can check all this out at my back ... uhhn ... err ... I mean the back of the photobooth."
+  ],
+  "EASTER_EGGS": [
+    "I'm afraid I can't do that Dave."
+  ],
+  "HELP": [
+    "I'm a photobooth"
+  ],
+  "STYLE_INQUIRY": [
+    "Would you like to add some style to your photo?",
+    "How about spicing this pic up with some stylizations?",
+    "Are you sure? This photo looks bad ... well ... ok, Do you at least want to add some style to it?"
+  ],
+  "SYTLE_STALLING": [
+    "Oh good. I'm glad you decided to add style. This photo is a disaster without it ... um ... uh ... well I mean ... don't worry about it, I'm sure you're a very nice person ... and, uh ... well I don't really have eyes, and my brain is a tensor flow model.  ... ... I haven't been trained what to do in these situations.  Anyway, here you go. ",
+    "Just a minute, downloading styles **dialup** here you go."
+  ],
+  "SELECT_PHOTO_INQUIRY": [
+    "Would you like to upload your photo so you can share it?"
+  ],
+  "FALLBACK_GENERAL": [
+    "Say what? I'm just a humble photobooth",
+    "Sorry, left the lens cap on. Can you try that again?",
+    "Sorry, the flash went off in my eye. Did you say something?",
+    "Er, did you say Cheese? Or Jeez?"
+  ],
+  "FALLBACK_FINAL":[
+    "I'm sorry I can't seem to understand you, I've really fallen apart.  Please find a Googler to put be back together again!"
+  ],
+  "START_OVER":[
+    "Photobooth reset intiated.  Just kidding. or not."
+  ],
+  "NOT_IN_PHOTOBOOTH":[
+    "Hi, I am the Google I/O 17 photobooth! Looks like you're a little too far away for me to take your picture.  If you're at I/O come drop by.",
+    "Hi, I am the Google I/O 17 photobooth! Sorry, I'm not here, but if you leave a message ... wait. I have an idea!  Come over here, I'll be at I/O.",
+    "Hi, I am the Google I/O 17 photobooth! Taking your picture in 5,4,3 ... hey. Wait.  You're not here.  You should come to Google I/O so I can take your picture."
+  ]
+}
