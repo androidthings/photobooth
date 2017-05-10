@@ -21,6 +21,10 @@ import android.util.Log;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
+/**
+ * Stylizes the camera preview according to "A Learned Representation For Artistic Style"
+ * (https://arxiv.org/abs/1610.07629)
+ */
 public class TensorflowStyler {
 
     public static final String TAG = "TensorflowStyler";

@@ -333,11 +333,11 @@ public class CameraConnectionFragment extends Fragment {
         }
     }
 
-    public Bitmap getPreviewBitmap() {
+    public Bitmap getCurrentFrameCopy() {
         Bitmap previewBitmap = imagePreviewListener.getLatestBitmap();
         if (previewBitmap == null) {
             return null;
         }
-        return Bitmap.createBitmap(imagePreviewListener.getLatestBitmap());
+        return Bitmap.createBitmap(previewBitmap);
     }
 }
