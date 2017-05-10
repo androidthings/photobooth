@@ -52,15 +52,17 @@ public class MessagingService extends FirebaseMessagingService {
             Map<String, String> data = remoteMessage.getData();
             String command = data.get(FcmContract.KEY_FOR_COMMAND);
 
-            switch(command) {
-                case FcmContract.COMMAND_CAPTURE:
-                    fireIntent(command);
-                    Log.d(TAG, "Received Something: " + command);
-                    break;
-                default:
-                    fireIntent(command);
-                    Log.d(TAG, "Received Something unrecognized: " + command);
-                    break;
+            if (command != null) {
+                switch (command) {
+                    case FcmContract.COMMAND_CAPTURE:
+                        fireIntent(command);
+                        Log.d(TAG, "Received Something: " + command);
+                        break;
+                    default:
+                        fireIntent(command);
+                        Log.d(TAG, "Received Something unrecognized: " + command);
+                        break;
+                }
             }
         }
 

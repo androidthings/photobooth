@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -213,6 +214,8 @@ public class PhotoboothActivity extends Activity {
                     if (bitmapToStylize != null) {
                         Log.d(TAG, "\tcalling stylize.");
                         stylizeAndDisplayBitmap(bitmapToStylize);
+                        cameraFragment.closeCamera();
+                        cameraFragment.startPreview();
                     } else {
                         Log.d(TAG, "\tbitmapToStylize was null! NULLLL");
                     }
@@ -272,18 +275,64 @@ public class PhotoboothActivity extends Activity {
         }
     }
 
+    Uri[] links = new Uri[2];
+    public static final int ORIG_LINK_INDEX = 0;
+    public static final int STYLED_LINK_INDEX = 1;
+
+    public synchronized void gatherLinks(Uri link, int index) {
+        links[index] = link;
+        if (links[0] != null & links[1] != null) {
+            Log.d(TAG, "Both photos uploaded.  Printing.");
+
+            mPrinter.printQrCode(links[0].toString(), 200, links[0].toString());
+            mPrinter.printQrCode(links[1].toString(), 200, links[1].toString());
+
+            links[0] = null;
+            links[1] = null;
+        }
+    }
+
     public void processChosenImage() {
-        if (mCurrStyledBitmap != null) {
+        if (mCurrStyledBitmap != null && mCurrSourceBitmap != null) {
             runInBackground(() -> {
-                FirebaseStorageAdapter.PhotoUploadedListener listener =
+                FirebaseStorageAdapter.PhotoUploadedListener originalListener =
                         url -> {
-                            mPrinter.printQrCode(url.toString(), 200, url.toString());
-                            Log.d(TAG, "Image uploaded successfully, printing shortcode: " +
+                            // mPrinter.printQrCode(url.toString(), 200, url.toString());
+                            Log.d(TAG, "Original uploaded successfully, printing shortcode: " +
                                     url);
+                            gatherLinks(url, ORIG_LINK_INDEX);
                         };
-                mFirebaseAdapter.uploadBitmap(mCurrStyledBitmap, "styled", null, listener);
+
+                FirebaseStorageAdapter.PhotoUploadedListener styledListener =
+                        url -> {
+                            // mPrinter.printQrCode(url.toString(), 200, url.toString());
+                            Log.d(TAG, "Styled uploaded successfully, printing shortcode: " +
+                                    url);
+                            gatherLinks(url, STYLED_LINK_INDEX);
+                        };
+
+                Log.d(TAG, "Uploading bitmaps");
+                mFirebaseAdapter.uploadBitmaps(mCurrSourceBitmap, mCurrStyledBitmap,
+                        originalListener, styledListener);
+
+                mCurrSourceBitmap = null;
+                mCurrStyledBitmap = null;
                 processingSecondaryButton = false;
             });
+
+        } else if (mCurrSourceBitmap != null && mCurrStyledBitmap == null) {
+            FirebaseStorageAdapter.PhotoUploadedListener uploadListener =
+                    url -> {
+                        Log.d(TAG, "ONLY original uploaded successfully, printing shortcode: " +
+                                url);
+                        mPrinter.printQrCode(url.toString(), 200, url.toString());
+                    };
+            mFirebaseAdapter.uploadBitmap(mCurrSourceBitmap, "original", null,
+                    uploadListener,true);
+
+            mCurrSourceBitmap = null;
+            mCurrStyledBitmap = null;
+            processingSecondaryButton = false;
 
         } else {
             Log.d(TAG, "No bitmap to process.");
@@ -373,7 +422,7 @@ public class PhotoboothActivity extends Activity {
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter(MESSAGE_RECEIVED));
 
-        FirebaseMessaging.getInstance().subscribeToTopic("photobooth-testing");
+        FirebaseMessaging.getInstance().subscribeToTopic("io-photobooth");
 
         super.onResume();
 

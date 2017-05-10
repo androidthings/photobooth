@@ -180,7 +180,7 @@ public class CameraConnectionFragment extends Fragment {
     /**
      * Closes the current {@link CameraDevice}.
      */
-    private void closeCamera() {
+    protected void closeCamera() {
         try {
             cameraOpenCloseLock.acquire();
             if (captureSession != null) {

@@ -67,7 +67,7 @@ public class ThermalPrinter {
         try {
             List<String> devices = manager.getUartDeviceList();
             if (devices.contains(UART_DEVICE_NAME)) {
-                Log.d(TAG, "Connecting to thermal printer at" + UART_DEVICE_NAME);
+                Log.d(TAG, "Connecting to thermal printer at " + UART_DEVICE_NAME);
                 mDevice = manager.openUartDevice(UART_DEVICE_NAME);
                 configureUartFrame(mDevice);
                 configurePrinter();
@@ -201,6 +201,15 @@ public class ThermalPrinter {
     }
 
     private synchronized void writeUartData(byte[] data) throws IOException {
+
+        // If printer isn't initialized, abort.
+        if (mDevice == null) {
+            Log.d(TAG, "No printer connected");
+            return;
+        } else {
+            Log.d(TAG, "Device connected.  Printing!");
+        }
+
         // In the case of writing images, let's assume we shouldn't send more than 400 bytes
         // at a time to avoid buffer overrun - At which point the thermal printer tends to
         // either lock up or print garbage.
@@ -223,8 +232,6 @@ public class ThermalPrinter {
             byteBuffer.get(lastChunk);
             mDevice.write(lastChunk, lastChunk.length);
         }
-
-        Log.d(TAG, "Wrote " + totalCount + " bytes to peripheral");
     }
 
     void close() {
