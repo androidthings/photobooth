@@ -1,0 +1,21 @@
+{
+	"action":{
+		"START": "picture.take",
+		"PICTURE_APPROVED": "picture.take.yes",
+		"PICTURE_DENIED": "picture.take.no",
+		"START_OVER": "restart",
+		"STYLE_PICTURE_APPROVED": "picture.style.yes",
+		"STYLE_PICTURE_DENIED": "picture.style.no",
+		"PICTURE_UPLOAD_APPROVED": "picture.upload.yes",
+		"FALLBACK_GENERAL": "input.unknown",
+		"FALLBACK_FINAL": "input.unknown.final",
+		"CANCEL": "end",
+		"HELP":"help",
+		"ABOUT":"about",
+		"EASTER_EGG":"easter.egg"
+
+	},
+	"context":{
+		"CONTEXT":"context.value"
+	}
+}
