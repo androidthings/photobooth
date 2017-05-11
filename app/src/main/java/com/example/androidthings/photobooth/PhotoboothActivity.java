@@ -31,6 +31,7 @@ import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
@@ -200,16 +201,17 @@ public class PhotoboothActivity extends Activity {
         }
     }
 
-    public Bitmap takePicture() {
+    public Bitmap takeSnapshot() {
         mCurrSourceBitmap = getCameraFragment().getCurrentFrameCopy();
-
-        // Update the snapshot view, indicating to user that something has happened.
-        ImageView snapshotView = (ImageView) findViewById(R.id.stylizedView);
-        snapshotView.setImageBitmap(mCurrSourceBitmap);
-
         return mCurrSourceBitmap;
     }
 
+    public Bitmap showSnapshot(Bitmap bitmap) {
+        ImageView snapshotView = (ImageView) findViewById(R.id.imageView);
+        snapshotView.setVisibility(View.VISIBLE);
+        snapshotView.setImageBitmap(bitmap);
+        return bitmap;
+    }
     protected void stylizePicture() {
         // Tensorflow takes a while on these images, and we don't want an itchy trigger-finger
         // (or trigger-voice, or whatever) locking up the CPU with too many requests. If one image
@@ -226,28 +228,24 @@ public class PhotoboothActivity extends Activity {
 
         if (PREVIEW_DUMP_DEBUG) {
             runInBackground(() -> {
-                Bitmap originalBitmap = getCameraFragment().getCurrentFrameCopy();
+                Bitmap originalBitmap = takeSnapshot();
                 mTensorflowStyler.saveStyleExamples(originalBitmap);
                 processingPrimaryButton = false;
             });
         } else {
-            Bitmap bitmapToStylize = takePicture();
+            cameraFragment.closeCamera();
+            Bitmap bitmapToStylize = takeSnapshot();
+            showSnapshot(mCurrSourceBitmap);
 
             if (bitmapToStylize != null) {
                 Log.d(TAG, "\tcalling stylize.");
                 stylizeAndDisplayBitmap(bitmapToStylize);
-                cameraFragment.closeCamera();
-                cameraFragment.startPreview();
             } else {
                 Log.d(TAG, "\tbitmapToStylize was null! NULLLL");
             }
 
             Log.d(TAG, "\tstylizeAndDisplayBitmap called.");
         }
-    }
-
-    public Bitmap getChosenSourcePhoto() {
-        return mCurrSourceBitmap;
     }
 
     /**
@@ -278,7 +276,7 @@ public class PhotoboothActivity extends Activity {
                         processingSecondaryButton = true;
                     }
                 }
-                processChosenImage();
+                processChosenImage(false);
             };
             mSecondaryButton.setOnButtonEventListener(mSecondaryButtonCallback);
         }
@@ -301,52 +299,53 @@ public class PhotoboothActivity extends Activity {
         }
     }
 
-    public void processChosenImage() {
-        if (mCurrStyledBitmap != null && mCurrSourceBitmap != null) {
-            runInBackground(() -> {
-                FirebaseStorageAdapter.PhotoUploadedListener originalListener =
+    public void processChosenImage(boolean attendeeRequestingShare) {
+        runInBackground(() -> {
+
+            if (mCurrStyledBitmap != null && mCurrSourceBitmap != null) {
+                    FirebaseStorageAdapter.PhotoUploadedListener originalListener =
+                            url -> {
+                                // mPrinter.printQrCode(url.toString(), 200, url.toString());
+                                Log.d(TAG, "Original uploaded successfully, printing shortcode: " +
+                                        url);
+                                gatherLinks(url, ORIG_LINK_INDEX);
+                            };
+
+                    FirebaseStorageAdapter.PhotoUploadedListener styledListener =
+                            url -> {
+                                // mPrinter.printQrCode(url.toString(), 200, url.toString());
+                                Log.d(TAG, "Styled uploaded successfully, printing shortcode: " +
+                                        url);
+                                gatherLinks(url, STYLED_LINK_INDEX);
+                            };
+
+                    Log.d(TAG, "Uploading bitmaps");
+                    mFirebaseAdapter.uploadBitmaps(mCurrSourceBitmap, mCurrStyledBitmap,
+                            originalListener, styledListener, attendeeRequestingShare);
+            } else if (mCurrSourceBitmap != null && mCurrStyledBitmap == null) {
+                FirebaseStorageAdapter.PhotoUploadedListener uploadListener =
                         url -> {
-                            // mPrinter.printQrCode(url.toString(), 200, url.toString());
-                            Log.d(TAG, "Original uploaded successfully, printing shortcode: " +
+                            Log.d(TAG, "ONLY original uploaded successfully, printing shortcode: " +
                                     url);
-                            gatherLinks(url, ORIG_LINK_INDEX);
+                            mPrinter.printQrCode(url.toString(), 200, url.toString());
                         };
-
-                FirebaseStorageAdapter.PhotoUploadedListener styledListener =
-                        url -> {
-                            // mPrinter.printQrCode(url.toString(), 200, url.toString());
-                            Log.d(TAG, "Styled uploaded successfully, printing shortcode: " +
-                                    url);
-                            gatherLinks(url, STYLED_LINK_INDEX);
-                        };
-
-                Log.d(TAG, "Uploading bitmaps");
-                mFirebaseAdapter.uploadBitmaps(mCurrSourceBitmap, mCurrStyledBitmap,
-                        originalListener, styledListener);
-
-                mCurrSourceBitmap = null;
-                mCurrStyledBitmap = null;
-                processingSecondaryButton = false;
-            });
-
-        } else if (mCurrSourceBitmap != null && mCurrStyledBitmap == null) {
-            FirebaseStorageAdapter.PhotoUploadedListener uploadListener =
-                    url -> {
-                        Log.d(TAG, "ONLY original uploaded successfully, printing shortcode: " +
-                                url);
-                        mPrinter.printQrCode(url.toString(), 200, url.toString());
-                    };
-            mFirebaseAdapter.uploadBitmap(mCurrSourceBitmap, "original", null,
-                    uploadListener,true);
+                mFirebaseAdapter.uploadBitmap(mCurrSourceBitmap, "original", null,
+                        uploadListener,attendeeRequestingShare);
+            } else {
+                Log.d(TAG, "No bitmap to process.");
+            }
 
             mCurrSourceBitmap = null;
             mCurrStyledBitmap = null;
-            processingSecondaryButton = false;
 
-        } else {
-            Log.d(TAG, "No bitmap to process.");
             processingSecondaryButton = false;
-        }
+            enterPreviewMode();
+        });
+
+    }
+
+    void enterPreviewMode() {
+        cameraFragment.startPreview();
     }
 
     public void stylizeAndDisplayBitmap(final Bitmap sourceImage) {
@@ -358,7 +357,7 @@ public class PhotoboothActivity extends Activity {
             mCurrStyledBitmap = blended;
             runOnUiThread(() -> {
                 if (stylizedImage != null) {
-                    ImageView snapshotView = (ImageView) findViewById(R.id.stylizedView);
+                    ImageView snapshotView = (ImageView) findViewById(R.id.imageView);
                     if (snapshotView != null) {
                         snapshotView.setImageBitmap(blended);
                     }
@@ -468,14 +467,22 @@ public class PhotoboothActivity extends Activity {
             switch (message) {
                 case FcmContract.COMMAND_CAPTURE:
                     Log.d("receiver", "Capturing.");
-                    takePicture();
+                    Bitmap snapshot = takeSnapshot();
+                    showSnapshot(snapshot);
                     break;
                 case FcmContract.COMMAND_STYLE:
                     stylizeAndDisplayBitmap(mCurrSourceBitmap);
                     break;
-                case FcmContract.GO_WITH_THIS_ONE:
-                    processChosenImage();
+                case FcmContract.UPLOAD:
+                    processChosenImage(false);
                     break;
+                case FcmContract.UPLOAD_AND_SHARE:
+                    processChosenImage(true);
+                    break;
+                case FcmContract.COMMAND_START_OVER:
+                    mCurrSourceBitmap = null;
+                    mCurrStyledBitmap = null;
+                    enterPreviewMode();
             }
         }
     };

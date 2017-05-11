@@ -53,7 +53,7 @@ public class FirebaseStorageAdapter {
 
     FirebaseStorage mStorage = FirebaseStorage.getInstance();
 
-    public interface PhotoUploadedListener{
+    public interface PhotoUploadedListener {
         void onPhotoUploaded(Uri url);
     }
 
@@ -81,6 +81,7 @@ public class FirebaseStorageAdapter {
 
     /**
      * Get a reference to the "images" directory on Firebase Storage.
+     *
      * @return reference to "images" upload directory.
      */
     public StorageReference getImagesStorageRef() {
@@ -93,6 +94,7 @@ public class FirebaseStorageAdapter {
     /**
      * Helper method to generate a filename, which will be the timestamp (for easy searching
      * and sorting) with optional prefix and suffixes.
+     *
      * @param prefix Will go in front of the timestamp in the filename.
      * @param suffix Will go after the timestamp in the filename.
      * @return image filename of form "prefix-timestamp-suffix.png".
@@ -126,7 +128,7 @@ public class FirebaseStorageAdapter {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("links")
                 .child("images")
-                .child(filename.substring(0,filename.length() - 4));
+                .child(filename.substring(0, filename.length() - 4));
 
         // Attach metadata
 
@@ -144,7 +146,8 @@ public class FirebaseStorageAdapter {
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {}
+            public void onCancelled(DatabaseError databaseError) {
+            }
         });
 
         Log.d(TAG, "Uploading file.");
@@ -165,11 +168,14 @@ public class FirebaseStorageAdapter {
     }
 
     void uploadBitmaps(Bitmap original, Bitmap styled,
-                       PhotoUploadedListener origListener, PhotoUploadedListener styledListener) {
-            uploadBitmap(original, "original", null, origListener,false);
-            uploadBitmap(styled, "styled", null, styledListener, true);
-    }
+                       PhotoUploadedListener origListener, PhotoUploadedListener styledListener,
+                       boolean shareOnSocialMedia) {
 
+        // Even if user elects for sharing on social media, we don't want to spam the feed
+        // with two images for each person.  When there's a styled image, never share the original.
+        uploadBitmap(original, "original", null, origListener, false);
+        uploadBitmap(styled, "styled", null, styledListener, shareOnSocialMedia);
+    }
 
 
     UploadTask signInAndUploadBitmap(Bitmap bitmap, String prefix, String suffix, boolean share) {
@@ -181,12 +187,12 @@ public class FirebaseStorageAdapter {
                     // Otherwise, do the storage thing
                     return uploadBitmap(bitmap, prefix, suffix, null, share);
                 }).addOnSuccessListener(result -> {
-            // Auth and upload succeeded
-            Log.d(TAG, "Both Auth and upload succeeded, hooray!");
-        }).addOnFailureListener(e -> {
-            // Either auth or upload failed, can check exception subclass if we care which one
-            Log.d(TAG, "There was an error uploading the image!", e);
-        }).getResult().getTask();
+                    // Auth and upload succeeded
+                    Log.d(TAG, "Both Auth and upload succeeded, hooray!");
+                }).addOnFailureListener(e -> {
+                    // Either auth or upload failed, can check exception subclass if we care which one
+                    Log.d(TAG, "There was an error uploading the image!", e);
+                }).getResult().getTask();
         return uploadTask;
     }
 

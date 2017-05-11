@@ -234,7 +234,7 @@ public class CameraConnectionFragment extends Fragment {
         }
     }
 
-    private void takePicture() {
+    private void capturePreviewStream() {
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -328,7 +328,7 @@ public class CameraConnectionFragment extends Fragment {
 
                             // When the session is ready, we start capture.
                             captureSession = cameraCaptureSession;
-                            takePicture();
+                            capturePreviewStream();
                         }
 
                         @Override

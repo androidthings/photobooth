@@ -18,8 +18,10 @@ package com.example.androidthings.photobooth;
 
 public class FcmContract {
     public static final String KEY_FOR_COMMAND = "cmd";
+    public static final String COMMAND_PREVIEW = "preview";
     public static final String COMMAND_CAPTURE = "capture";
     public static final String COMMAND_STYLE = "style";
-    public static final String GO_WITH_THIS_ONE = "finish";
+    public static final String UPLOAD = "finish";
+    public static final String UPLOAD_AND_SHARE = "finish_and_share";
     public static final String COMMAND_START_OVER = "startover";
 }
