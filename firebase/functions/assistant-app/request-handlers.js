@@ -17,14 +17,16 @@ const responseFetch = new ResponseFetch();
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
+admin.initializeApp(functions.config().firebase, 'assistantApp');
 
 // Photobooth Command Constants
 const TOPIC = 'io-photobooth';
 const KEY_FOR_COMMAND = 'cmd';
+const BEGIN_PREVIEW = 'preview';
 const COMMAND_CAPTURE = 'capture';
 const COMMAND_STYLE = 'style';
 const GO_WITH_THIS_ONE = 'finish';
+const GO_AND_SHARE_THIS_ONE = 'finish_and_share';
 const COMMAND_START_OVER = 'startover';
 
 // API.AI Context Constants
@@ -34,7 +36,7 @@ const PICTURE_CHOSEN_FOLLOWUP = 'intro_and_take_picture-yes-followup';
 const PICTURE_STYLE_DONE = 'picture_styled';
 
 // User ID of the Google account used with the photo booth
-const PHOTO_BOOTH_ID = functions.config().assistantApp.photoBoothId;
+const PHOTO_BOOTH_ID = functions.config().assistantapp.photoboothid;
 
 /**
  * Request handler utility class.
@@ -63,20 +65,43 @@ module.exports = class RequestHandler {
     console.log('Command delay: ' + commandDelay);
 
     // Send a message to Firebase Cloud Messaging to capture at the right moment
+    sendFirebaseCommand();
     setTimeout(sendFirebaseCommand, commandDelay, COMMAND_CAPTURE);
     return app.ask(response);
   }
 
   // Retake picture if user doesn't approve
   takePicture (app) {
+    // Count how many pictures have been taken
+    if (app.data.pictureCount) { app.data.pictureCount += 1; }
+    else { app.data.pictureCount = 1; }
+
+    let response1; // var for response string
+    let commandDelay1; // var for cmd dealy in milliseconds
+    // if 6 have been taken tell the user to let others have a turn
+    if (app.data.pictureCount == 6){
+      let response = responseFetch.getResponse('END_TO_MANY_PICTURES');
+      return app.tell(response)  
+    } else if (app.data.pictureCount == 5) {
+      // tell the user they have one more chance
+      [response1, commandDelay1] = responseFetch.getResponseAndCommandDealy('TAKE_PICTURE_LAST_ONE');
+    } else {
+      // tell the user you're going to take another picture
+      [response1, commandDelay1] = responseFetch.getResponseAndCommandDealy('TAKE_PICTURE_PREAMBLE');
+    }
+    
     // Set the context to keep the count for fallback intents
     app.setContext(PICTURE_TAKEN, 3);
     app.setContext(PICTURE_TAKEN_FOLLOWUP, 3);
 
-    // Get response
-    let response; // var for response string
-    let commandDelay; // var for cmd dealy in milliseconds
-    [response, commandDelay] = responseFetch.getTakePictureResponse();
+    // Get take picture response
+    let response2;
+    let commandDealy2;
+    [response2, commandDelay2] = responseFetch.getTakePictureResponse();
+    //combine the responses and delays
+    let response = response1 + response2;
+    let commandDelay = commandDelay1 + commandDelay2;
+    response = response.split('</speak><speak>').join('');
     console.log('Response: ' + response);
     console.log('Command delay: ' + commandDelay);
 
@@ -109,7 +134,7 @@ module.exports = class RequestHandler {
   //                   Select photo intent handlers
   // ---------------------------------------------------------------------------
   // If the user said they wanted style, stall and ask them if they like it
-  selectPhotoInquiryStall (app) {
+  sharePhotoInquiryStall (app) {
     // Set the context to keep the count for fallback intents
     app.setContext(PICTURE_TAKEN, 3);
     app.setContext(PICTURE_TAKEN_FOLLOWUP, 3);
@@ -118,9 +143,9 @@ module.exports = class RequestHandler {
 
     // Get the response to stall and then ask the user if they like it
     let response = responseFetch.getResponse('SYTLE_STALLING');
-    response += responseFetch.getResponse('SELECT_PHOTO_INQUIRY');
+    response += responseFetch.getResponse('SHARE_PHOTO_INQUIRY');
     response = response.split('</speak><speak>').join('');
-    console.log('Style Inquiry Stall');
+    console.log('Share Photo Inquiry with Stall');
     console.log('Response: ' + response);
 
     // Send FCM message to style the photo
@@ -130,7 +155,7 @@ module.exports = class RequestHandler {
   }
 
   // If the user doesn't want style, ask them if they want to print the photo
-  selectPhotoInquiry (app) {
+  sharePhotoInquiry (app) {
     // Set the context to keep the count for fallback intents
     app.setContext(PICTURE_TAKEN, 3);
     app.setContext(PICTURE_TAKEN_FOLLOWUP, 3);
@@ -138,34 +163,35 @@ module.exports = class RequestHandler {
     app.setContext(PICTURE_STYLE_DONE, 3);
 
     // Get response to ask the user if they want to select the current photo
-    let response = responseFetch.getResponse('SELECT_PHOTO_INQUIRY');
-    console.log('Select Photo Inquiry');
+    let response = responseFetch.getResponse('SHARE_PHOTO_INQUIRY');
+    console.log('Share Photo Inquiry');
     console.log('Response: ' + response);
 
     return app.ask(response);
   }
 
   // If the user selected the photo print it and tell them what you are doing
-  photoSelected (app) {
+  photoShared (app) {
     // Get response to tell the user they selected the current photo
-    let response = responseFetch.getResponse('SELECTING_PHOTO');
-    response += responseFetch.getResponse('END');
-    response = response.split('</speak><speak>').join('');
-    console.log('Photo Selected');
+    let response = responseFetch.getResponse('END');
+    console.log('Photo Shared');
     console.log('Response: ' + response);
 
     // Send FCM message to print the photo
-    sendFirebaseCommand(GO_WITH_THIS_ONE);
+    sendFirebaseCommand(GO_AND_SHARE_THIS_ONE);
 
     return app.tell(response);
   }
 
-  // If the user doesn't select the photo say goodbye
-  end (app) {
-    // Get response to ask the user if they want to select the current photo
+  // If the user doesn't share the photo
+  photoNotShared (app) {
+    // Get response to tell the user they selected the current photo
     let response = responseFetch.getResponse('END');
-    console.log('End');
+    console.log('Photo Printed');
     console.log('Response: ' + response);
+
+    // Send FCM message to print the photo
+    sendFirebaseCommand(GO_WITH_THIS_ONE);
 
     return app.tell(response);
   }

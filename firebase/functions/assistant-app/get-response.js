@@ -23,22 +23,44 @@ const SHUTTER_SOUND_TAG = '**shutter**';
 const SHUTTER_SOUND_SSML = '<audio src="https://storage.googleapis.com/smart-photobooth-93105.appspot.com/sounds/shutter.mp3" />';
 const DIAL_UP_SOUND_TAG = '**dialup**';
 const DIAL_UP_SOUND_SSML = '<audio src="https://storage.googleapis.com/smart-photobooth-93105.appspot.com/sounds/DialUp.mp3" />';
+const RUSTLING_TAG = '**rustling**'
+const RUSTLING_SSML = '<audio src="https://actions.google.com/sounds/v1/household/bacon_out_of_package.ogg" />'
+const BOING_TAG = '**boing**';
+const BOING_SSML = '<audio src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" />'
 
-const DELAY_ADJUST = 1.0;
+const GENERAL_DELAY_ADJUST = 1.0;
+const WELCOME_DELAY_OFFSET = 3000;
 
 /**
  * Prompt fetching utility class.
  */
 module.exports = class ResponseFetch {
+  constructor(){
+    this.responseCounter = {};
+  }
+
   /*
    * Gets a random string from array of strings.
    *
    * @param {Array<string>} strings Array of strings.
    * @return {string} Randomly chosen string from array.
    */
-  getRandomResponse_ (responses) {
-    const index = Math.floor(Math.random() * responses.length);
-    return responses[index];
+  getNextResponse_ (responseName) {
+    let qtyResponseOptions = responses[responseName].length
+    
+    // If there is only one response option, return it
+    if (qtyResponseOptions == 1) {
+      return responses[responseName][0];
+    }
+
+    let currentIndex = this.responseCounter[responseName]
+    if (currentIndex < qtyResponseOptions) {
+      this.responseCounter[responseName] += 1;
+      return responses[responseName][currentIndex];
+    } else {
+      this.responseCounter[responseName] = 1;
+      return responses[responseName][0];
+    }
   }
   /*
    * Takes a string and pre fixes and post fixes SSML tags
@@ -70,6 +92,8 @@ module.exports = class ResponseFetch {
   replaceTagsWithSsmlSounds (string) {
     string = string.split(SHUTTER_SOUND_TAG).join(SHUTTER_SOUND_SSML);
     string = string.split(DIAL_UP_SOUND_TAG).join(DIAL_UP_SOUND_SSML);
+    string = string.split(BOING_TAG).join(BOING_SSML);
+    string = string.split(RUSTLING_TAG).join(RUSTLING_SSML);
     return string;
   }
   /*
@@ -80,7 +104,7 @@ module.exports = class ResponseFetch {
   getResponse (name, index) {
     let response;
     if (index === undefined) {
-      response = this.getRandomResponse_(responses[name]);
+      response = this.getNextResponse_(name);
     } else {
       response = responses[name][index];
     }
@@ -88,6 +112,24 @@ module.exports = class ResponseFetch {
     response = this.replaceTagsWithSsmlSounds(response);
     response = this.addPrePostfix(response);
     return response;
+  }
+  /*
+   * Gets a random string from one of the given general prompt types.
+   *
+   * @return {string} string containing response
+   */
+  getResponseAndCommandDealy (name, index) {
+    let response;
+    let commandDelay;
+    if (index === undefined) {
+      [response, commandDelay]= this.getNextResponse_(name);
+    } else {
+      [response, commandDelay] = responses[name][index];
+    }
+    response = this.replacePunctuationWithSsml(response);
+    response = this.replaceTagsWithSsmlSounds(response);
+    response = this.addPrePostfix(response);
+    return [response, commandDelay];
   }
   /*
    * Gets a welcome string from a combo of a welcome response
@@ -104,9 +146,9 @@ module.exports = class ResponseFetch {
     let responseDelay2;
 
     // Get responses
-    [response1, responseDelay1] = this.getRandomResponse_(responses['WELCOME']);
-    [response2, responseDelay2] = this.getRandomResponse_(responses['TAKE_PICTURE']);
-    response3 = this.getRandomResponse_(responses['APPROVAL_INQUIRY']);
+    [response1, responseDelay1] = this.getNextResponse_('WELCOME');
+    [response2, responseDelay2] = this.getNextResponse_('TAKE_PICTURE');
+    response3 = this.getNextResponse_('APPROVAL_INQUIRY');
 
     // Compose response
     let response = response1 + ', ' + response2 + '... ... ' + response3;
@@ -115,9 +157,9 @@ module.exports = class ResponseFetch {
     response = this.addPrePostfix(response);
 
     // Calculate delay until shutter sound  (don't include approval inquiry)
-    let delay = responseDelay1 + responseDelay2;
+    let delay = responseDelay1 + responseDelay2 + WELCOME_DELAY_OFFSET;
 
-    return [response, delay * DELAY_ADJUST];
+    return [response, delay * GENERAL_DELAY_ADJUST];
   }
   /*
    * Gets a take picture response
@@ -132,8 +174,8 @@ module.exports = class ResponseFetch {
 
     // Get responses
     // Calculate delay until shutter sound (don't include approval inquiry)
-    [response1, delay] = this.getRandomResponse_(responses['TAKE_PICTURE']);
-    response2 = this.getRandomResponse_(responses['APPROVAL_INQUIRY']);
+    [response1, delay] = this.getNextResponse_('TAKE_PICTURE');
+    response2 = this.getNextResponse_('APPROVAL_INQUIRY');
 
     // Compose response
     let response = response1 + '... ... ' + response2;
@@ -141,6 +183,6 @@ module.exports = class ResponseFetch {
     response = this.replaceTagsWithSsmlSounds(response);
     response = this.addPrePostfix(response);
 
-    return [response, delay * DELAY_ADJUST];
+    return [response, delay * GENERAL_DELAY_ADJUST];
   }
 };
