@@ -1,18 +1,19 @@
 {
   "WELCOME":[
-    ["Hello, I am the Google I/O 17 photobooth!", 2230]
+    ["Hi, I’m the Google I/O photo booth! Okay, taking a picture, ", 3000],
+    ["Welcome to I/O! Let's take your picture!", 3000],
+    ["The name is booth.  Photo booth.  I'm going take your picture now.", 3000]
   ],
   "TAKE_PICTURE": [
-    ["3, 2, 1, **shutter**", 2620],
-    ["3, 2, 1, Chee ee eee eee ee eee eee eee ! **shutter**", 4900],
-    ["5, 4, 3, 2, 1, okay, your car has arrived ... Kidding ... **shutter**Just took the picture,Didn’t order you a car", 8380],
-    ["3, 2, silliest face you’ve got, 1 **shutter**", 4010],
-    ["3, 2, don’t look so serious, you’re in a talking photobooth ... 1 , **shutter**", 6340],
-    ["3, 2, 1, FREEZE! ... Er,sorry, I meant cheese **shutter**", 6820],
-    ["Okay, 3, 2, 1 ...  Dagnabbit the shutter is stuck ... , uhh **shutter**", 6890],
-    ["Okay, 1,2, 2 and a half,3 and a half ... wait ... 3?  ... Do we go on **shutter**", 9050],
-    ["Okay, taking a picture, Releasing laughing gas in 5, 4, 3 ... ... ... **shutter**", 6700],
-    ["1, 2,3... 4 ... , **shutter**", 4200]
+    ["3, 2, 1, **shutter**", 3000],
+    ["3, 2, 1, Chee ee eee eee ee eee eee eee ! **shutter**", 3000],
+    ["5, 4, 3, 2, 1, okay, your car has arrived ... Kidding ... **shutter**Just took the picture, didn’t order you a car. ", 3000],
+    ["3, 2, silliest face you’ve got, 1 **shutter**", 3000],
+    ["3, 2, don’t look so serious, you’re in a talking photo booth ... 1 , **shutter**", 3000],
+    ["3, 2, 1, FREEZE! ... Er,sorry, I meant cheese **shutter**", 3000],
+    ["Okay, 3, 2, 1 ...  Oh no -  the shutter is stuck ... , uhh **shutter**", 3000],
+    ["Okay, 1, 2, 2 and a half, 3 and a half ... wait ... 3?  ... Do we go on **shutter**. ", 3000],
+    ["1, 2, 3... 4, ... **shutter**", 3000]
   ],
   "APPROVAL_INQUIRY":[
     "Do you like it?",
@@ -20,48 +21,61 @@
     "What do you think?",
     "Does it look good?"
   ],
-  "SELECTING_PHOTO":[
-    "Got it, uploading your photo.  I'm printing the URL and the photo for you now."
+  "TAKE_PICTURE_PREAMBLE": [
+    ["OK, let's try again...", 3000],
+    ["Alright, let's take another one...", 3000],
+    ["It's OK, we'll try it again...", 3000]
+  ],
+  "TAKE_PICTURE_LAST_ONE": [
+    ["Alright, one more, but this is your last one...", 3000]
+  ],
+  "END_TO_MANY_PICTURES": [
+    "Why don't you like my pictures?  I thought I was doing a good job ... oh well.  I don't think I can take pictures for you anymore, the rejection is just too painful.  Well, anyway...hope you have a good time at I/O."
   ],
   "END":[
-    "Ok, bye.  Just say OK Google talk to photobooth if you want to take another picture."
+    "Got it, uploading your photo.  Printing a link and the photo now. Don't forget to share your photo with hashtag io17 and have a great time at I/O"
   ],
   "ABOUT": [
-    "I'm put together with lots of different parts: I'm talking to you with a Google Home through an Assistant App built with Actions on Google and powered by Firebase functions.  The camera and screen are connected to my brain which is kept in a Raspberry Pi 3 running Android Things and Tensor Flow.  You can check all this out at my back ... uhhn ... err ... I mean the back of the photobooth."
+    "I'm put together with lots of different parts: I'm talking to you with a the Assistant SDK through an Assistant App built with Actions on Google and powered by Firebase functions.  The camera and screen are connected to my brain which is kept in a Raspberry Pi 3 running Android Things and Tensor Flow."
   ],
   "EASTER_EGGS": [
-    "I'm afraid I can't do that Dave."
+    "I'm afraid I can't do that Dave.",
+    "There aren't any doors here!  I'm open to all.",
+    "If your name is Dave, I can't do that.",
+    "Doors? There are no doors here."
   ],
   "HELP": [
-    "I'm a photobooth"
+    "I'm a photo booth. Just do what I say and everything will be ok."
   ],
   "STYLE_INQUIRY": [
     "Would you like to add some style to your photo?",
-    "How about spicing this pic up with some stylizations?",
-    "Are you sure? This photo looks bad ... well ... ok, Do you at least want to add some style to it?"
+    "How about spicing up this pic with some style?",
+    "How about adding some style to your photo?",
+    "Would you like to do this photo up, tensor flow style?"
   ],
   "SYTLE_STALLING": [
-    "Oh good. I'm glad you decided to add style. This photo is a disaster without it ... um ... uh ... well I mean ... don't worry about it, I'm sure you're a very nice person ... and, uh ... well I don't really have eyes, and my brain is a tensor flow model.  ... ... I haven't been trained what to do in these situations.  Anyway, here you go. ",
-    "Just a minute, downloading styles **dialup** here you go."
+    "Just a minute, downloading styles **dialup** here you go.",
+    "Ok here you go ... **boing** Whoops. Wrong tensor flow model.  This one just adds style to robots.  Hold on, I just need to find it**rustling** There it is.  Here you go.",
+    "Alright.  I'm running the tensor flow styling model now. You're going to love it.  While we wait, I’ll tell you about my day. I took a bunch of pictures and ... yeah, that’s about it. Anyway, here you go."
   ],
-  "SELECT_PHOTO_INQUIRY": [
+  "SHARE_PHOTO_INQUIRY": [
     "Would you like to upload your photo so you can share it?"
   ],
   "FALLBACK_GENERAL": [
     "Say what? I'm just a humble photobooth",
-    "Sorry, left the lens cap on. Can you try that again?",
-    "Sorry, the flash went off in my eye. Did you say something?",
-    "Er, did you say Cheese? Or Jeez?"
+    "Its kinda loud in here and, technically, I don't have ears, can you say that again?",
+    "Hey, I'm just a photo booth, you're going to have to speak up."
   ],
   "FALLBACK_FINAL":[
-    "I'm sorry I can't seem to understand you, I've really fallen apart.  Please find a Googler to put be back together again!"
+    "I'm really not getting this.  You might want to find a Googler to get some help.",
+    "Here I am, a talking photo booth, and I can't understand. Grab a Googler and tell them I need a reboot."
   ],
   "START_OVER":[
-    "Photobooth reset intiated.  Just kidding. or not."
+    "Photobooth reset initiated.  Just kidding. or not."
   ],
   "NOT_IN_PHOTOBOOTH":[
-    "Hi, I am the Google I/O 17 photobooth! Looks like you're a little too far away for me to take your picture.  If you're at I/O come drop by.",
-    "Hi, I am the Google I/O 17 photobooth! Sorry, I'm not here, but if you leave a message ... wait. I have an idea!  Come over here, I'll be at I/O.",
-    "Hi, I am the Google I/O 17 photobooth! Taking your picture in 5,4,3 ... hey. Wait.  You're not here.  You should come to Google I/O so I can take your picture."
+    "Hi, I’m the Google I/O photo booth! Looks like you're a little too far away for me to take your picture.  If you're at I/O come drop by.",
+    "Hi, I’m the Google I/O photo booth! Sorry, I'm not here, but if you leave a message … wait. I have an idea!  I'm at I/O come on over.",
+    "Hi, I’m the Google I/O photo booth! Taking your picture in 5,4,3 … hey. Wait.  You're not here.  You should come to Google I/O so I can take your picture."
   ]
 }

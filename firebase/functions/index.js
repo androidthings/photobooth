@@ -65,8 +65,8 @@ exports.photoboothAssistantApp = functions.https.onRequest((req, res) => {
     // asking if the user wants style to their selected photo
     [APIAI.action.PICTURE_APPROVED, handle.stylePictureInquiry],
     // asking the user if they want to upload/print their photo
-    [APIAI.action.STYLE_PICTURE_APPROVED, handle.selectPhotoInquiryStall],
-    [APIAI.action.STYLE_PICTURE_DENIED, handle.selectPhotoInquiry],
+    [APIAI.action.STYLE_PICTURE_APPROVED, handle.sharePhotoInquiryStall],
+    [APIAI.action.STYLE_PICTURE_DENIED, handle.sharePhotoInquiry],
     // Uploading the picture
     [APIAI.action.PICTURE_UPLOAD_APPROVED, handle.photoSelected],
     [APIAI.action.PICTURE_UPLOAD_DENIED, handle.end],
