@@ -32,11 +32,13 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
+import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.example.androidthings.photobooth.PhotoStripBuilder.PhotoStripSpec;
 import com.google.android.things.contrib.driver.button.Button;
+import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.io.IOException;
@@ -84,16 +86,11 @@ public class PhotoboothActivity extends Activity {
     private Handler inferenceHandler;
 
     // Physical GPIO-connected buttons.  Not UI buttons.
-    private Button mStyleButton;
-    private Button mSecondaryButton;
+    private ButtonInputDriver mStyleButton;
+    private ButtonInputDriver mSecondaryButton;
 
     private final String PRIMARY_BUTTON_GPIO_PIN = "BCM23";
     private final String SECONDARY_BUTTON_GPIO_PIN = "BCM24";
-
-    // Weak References.  Android Studio will hint that these can be converted to local variables,
-    // but that's a bad idea.
-    @SuppressWarnings("FieldCanBeLocal")
-    private Button.OnButtonEventListener mStyleButtonCallback, mSecondaryButtonCallback;
 
     private FirebaseStorageAdapter mFirebaseAdapter;
 
@@ -184,20 +181,35 @@ public class PhotoboothActivity extends Activity {
      */
     protected void initializeStyleButton() {
         try {
-            mStyleButton = new Button(PRIMARY_BUTTON_GPIO_PIN,
-                    Button.LogicState.PRESSED_WHEN_LOW);
+            mStyleButton = new ButtonInputDriver(PRIMARY_BUTTON_GPIO_PIN,
+                    Button.LogicState.PRESSED_WHEN_LOW, KeyEvent.KEYCODE_1);
         } catch (IOException e) {
             Log.e(TAG, "initializeStyleButton error", e);
         }
+    }
 
-        if (mStyleButton != null) {
-            mStyleButtonCallback = (button, pressed) -> {
-                if (!pressed) {
-                    return;
-                }
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_1:
                 stylizePicture();
-            };
-            mStyleButton.setOnButtonEventListener(mStyleButtonCallback);
+                return true;
+            case KeyEvent.KEYCODE_2:
+                // Locking mechanism until setDebounceDelay bugs are sorted out.
+                Log.d(TAG, "Secondary button pressed.");
+                synchronized (secondaryButtonLock) {
+                    if (processingSecondaryButton) {
+                        Log.d(TAG, "Secondary button press registered, locked out.");
+                        return true;
+                    } else {
+                        Log.d(TAG, "Secondary button press registered, entering.");
+                        processingSecondaryButton = true;
+                    }
+                }
+                processChosenImage(false);
+                return true;
+            default:
+                return super.onKeyUp(keyCode, event);
         }
     }
 
@@ -254,31 +266,10 @@ public class PhotoboothActivity extends Activity {
     private void initializeSecondaryButton() {
         // Hook up a button to upload styled image to Firebase.
         try {
-            mSecondaryButton = new Button(SECONDARY_BUTTON_GPIO_PIN,
-                    Button.LogicState.PRESSED_WHEN_LOW);
+            mSecondaryButton = new ButtonInputDriver(SECONDARY_BUTTON_GPIO_PIN,
+                    Button.LogicState.PRESSED_WHEN_LOW, KeyEvent.KEYCODE_2);
         } catch (IOException e) {
             Log.e(TAG, "initializeSecondaryButton error", e);
-        }
-
-        if (mSecondaryButton != null) {
-            mSecondaryButtonCallback = (button, pressed) -> {
-                if (!pressed) {
-                    return;
-                }
-                // Locking mechanism until setDebounceDelay bugs are sorted out.
-                Log.d(TAG, "Secondary button pressed.");
-                synchronized (secondaryButtonLock) {
-                    if (processingSecondaryButton) {
-                        Log.d(TAG, "Secondary button press registered, locked out.");
-                        return;
-                    } else {
-                        Log.d(TAG, "Secondary button press registered, entering.");
-                        processingSecondaryButton = true;
-                    }
-                }
-                processChosenImage(false);
-            };
-            mSecondaryButton.setOnButtonEventListener(mSecondaryButtonCallback);
         }
     }
 
