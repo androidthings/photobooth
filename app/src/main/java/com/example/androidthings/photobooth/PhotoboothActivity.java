@@ -245,7 +245,7 @@ public class PhotoboothActivity extends Activity {
                 processingPrimaryButton = false;
             });
         } else {
-            cameraFragment.closeCamera();
+            cameraFragment.stopPreview();
             Bitmap bitmapToStylize = takeSnapshot();
             showSnapshot(mCurrSourceBitmap);
 
@@ -343,16 +343,14 @@ public class PhotoboothActivity extends Activity {
             }
 
             processingSecondaryButton = false;
-            enterPreviewMode();
         });
 
     }
 
-    void enterPreviewMode() {
-        cameraFragment.startPreview();
-    }
-
     public void stylizeAndDisplayBitmap(final Bitmap sourceImage) {
+        if (sourceImage == null) {
+            return;
+        }
         runInBackground(() -> {
             Bitmap stylizedImage = Bitmap.createBitmap(sourceImage);
             mTensorflowStyler.stylizeBitmap(stylizedImage);
@@ -468,8 +466,13 @@ public class PhotoboothActivity extends Activity {
             String message = intent.getStringExtra(FcmContract.KEY_FOR_COMMAND);
             Log.d("receiver", "Got message: " + message);
             switch (message) {
+                case FcmContract.COMMAND_PREVIEW:
+                    Log.d(TAG, "Previewing.");
+                    cameraFragment.startPreview();
+                    break;
                 case FcmContract.COMMAND_CAPTURE:
                     Log.d("receiver", "Capturing.");
+                    cameraFragment.stopPreview();
                     Bitmap snapshot = takeSnapshot();
                     showSnapshot(snapshot);
                     break;
@@ -483,9 +486,14 @@ public class PhotoboothActivity extends Activity {
                     processChosenImage(true);
                     break;
                 case FcmContract.COMMAND_START_OVER:
+                    Log.d(TAG, "Starting over, start");
                     mCurrSourceBitmap = null;
                     mCurrStyledBitmap = null;
-                    enterPreviewMode();
+                    cameraFragment.stopPreview();
+                    ((ImageView) findViewById(R.id.imageView))
+                            .setImageResource(android.R.color.transparent);
+                    break;
+
             }
         }
     };
@@ -541,6 +549,4 @@ public class PhotoboothActivity extends Activity {
         super.onStop();
         mFirebaseAdapter.onStop();
     }
-
-
 }

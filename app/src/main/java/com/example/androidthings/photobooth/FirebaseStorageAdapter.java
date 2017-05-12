@@ -150,7 +150,7 @@ public class FirebaseStorageAdapter {
             }
         });
 
-        Log.d(TAG, "Uploading file.");
+        Log.d(TAG, "Uploading file: " + filename);
         UploadTask uploadTask;
         if (share) {
             StorageMetadata metadata = new StorageMetadata.Builder()

@@ -124,6 +124,9 @@ public class ThermalPrinter {
     }
 
     void printImage(Bitmap bitmap) {
+        if (mDevice == null) {
+            return;
+        }
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 
@@ -188,12 +191,18 @@ public class ThermalPrinter {
     }
 
     void printEmptyLines(int lines) {
+        if (mDevice == null) {
+            return;
+        }
         ByteArrayOutputStream printerBuffer = getOutputStream();
         addLineFeed(printerBuffer, lines);
         print(printerBuffer);
     }
 
     void printLn(String text) {
+        if (mDevice == null) {
+            return;
+        }
         // The EscPosBuilder will take our formatted text and convert it to a byte array
         // understood as instructions and data by the printer.
         ByteArrayOutputStream printerBuffer = getOutputStream();
@@ -203,13 +212,13 @@ public class ThermalPrinter {
     }
 
     private synchronized void writeUartData(byte[] data) throws IOException {
+        if (mDevice == null) {
+            return;
+        }
 
         // If printer isn't initialized, abort.
         if (mDevice == null) {
-            Log.d(TAG, "No printer connected");
             return;
-        } else {
-            Log.d(TAG, "Device connected.  Printing!");
         }
 
         // In the case of writing images, let's assume we shouldn't send more than 400 bytes
@@ -217,7 +226,6 @@ public class ThermalPrinter {
         // either lock up or print garbage.
         final int DEFAULT_CHUNK_SIZE = 400;
 
-        int totalCount = data.length;
         byte[] chunk = new byte[DEFAULT_CHUNK_SIZE];
         ByteBuffer byteBuffer = ByteBuffer.wrap(data);
         while (byteBuffer.remaining() > DEFAULT_CHUNK_SIZE) {
@@ -252,6 +260,10 @@ public class ThermalPrinter {
     }
 
     public void printQrCode(String data, int size, String label) {
+        if (mDevice == null) {
+            return;
+        }
+
         Bitmap qrBitmap;
         try {
             printLn("Here's your photo!");
@@ -270,7 +282,7 @@ public class ThermalPrinter {
         }
     }
 
-    private Bitmap generateQrCode(String myCodeText, int size) throws WriterException {
+    public Bitmap generateQrCode(String myCodeText, int size) throws WriterException {
         Hashtable<EncodeHintType, ErrorCorrectionLevel> hintMap = new Hashtable<EncodeHintType, ErrorCorrectionLevel>();
         hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H); // H = 30% damage
 

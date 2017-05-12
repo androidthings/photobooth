@@ -179,10 +179,11 @@ public class CameraConnectionFragment extends Fragment {
     /**
      * Closes the current {@link CameraDevice}.
      */
-    protected void closeCamera() {
+    private void closeCamera() {
         try {
             cameraOpenCloseLock.acquire();
             if (captureSession != null) {
+                captureSession.stopRepeating();
                 captureSession.close();
                 captureSession = null;
             }
@@ -196,6 +197,8 @@ public class CameraConnectionFragment extends Fragment {
             }
         } catch (final InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         } finally {
             cameraOpenCloseLock.release();
         }
@@ -244,7 +247,22 @@ public class CameraConnectionFragment extends Fragment {
         }
     }
 
+
+    synchronized void stopPreview() {
+        // halt updates to imageview
+        imagePreviewListener.setPreviewMode(false);
+
+        // release camera
+        closeCamera();
+        
+    }
+
+
     public void startPreview() {
+        imagePreviewListener.setPreviewMode(true);
+        if (cameraDevice != null && captureSession != null) {
+            return;
+        }
         Log.d(TAG, "Preview started.");
         startBackgroundThread();
         CameraManager manager =

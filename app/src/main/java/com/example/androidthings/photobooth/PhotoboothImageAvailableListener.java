@@ -52,6 +52,8 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
     // Keep reference to most recent bitmap in preview window, as this will be the one stylized.
     private Bitmap  mLatestBitmap = null;
 
+    private boolean mInPreviewMode = false;
+
     public void initialize(
             final Activity activity,
             final Integer sensorOrientation) {
@@ -69,10 +71,10 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
 
             if (image == null) {
                 return;
-            }
-
-            // No mutex needed as this method is not reentrant.
-            if (computing) {
+            } else if (!mInPreviewMode) {
+                image.close();
+                return;
+            } else if (computing) {
                 image.close();
                 Log.d(TAG, "Mutexed.");
 
@@ -93,6 +95,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             }
 
             ImageUtils.convertImageToBitmap(image, previewWidth, previewHeight, rgbBytes, cachedYuvBytes);
+            image.close();
 
             if (croppedBitmap != null && rgbFrameBitmap != null) {
                 rgbFrameBitmap.setPixels(rgbBytes, 0, previewWidth, 0, 0, previewWidth, previewHeight);
@@ -100,8 +103,6 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             }
 
             updateImageView(croppedBitmap, activity);
-
-            image.close();
         } catch (final Exception e) {
             if (image != null) {
                 image.close();
@@ -115,8 +116,16 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
         Trace.endSection();
     }
 
+    public void setPreviewMode(boolean inPreviewMode) {
+        mInPreviewMode = inPreviewMode;
+    }
+
+    public boolean getInPreviewMode() {
+        return mInPreviewMode;
+    }
+
     private void updateImageView(final Bitmap bmp, final Activity activity) {
-        if (activity != null) {
+        if (activity != null && mInPreviewMode) {
             activity.runOnUiThread(
                     () -> {
                         if (bmp != null) {
@@ -132,7 +141,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
                         }
                     });
         } else {
-            Log.d(TAG, "Activity is null! NULLLL");
+            Log.d(TAG, "Update did not occur.  Likely not in preview mode");
         }
     }
 
