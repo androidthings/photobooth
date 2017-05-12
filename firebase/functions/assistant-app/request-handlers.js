@@ -17,7 +17,6 @@ const responseFetch = new ResponseFetch();
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
 
 // Photobooth Command Constants
 const TOPIC = 'io-photobooth';

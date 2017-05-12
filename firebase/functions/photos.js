@@ -23,11 +23,6 @@ var https = require('https');
 var fs = require('fs');
 
 /**
- * Initialize Firebase Admin SDK.
- */
-admin.initializeApp(functions.config().firebase, 'photoProcess');
-
-/**
  * Twitter Info
  * https://apps.twitter.com/app/13660027
  */

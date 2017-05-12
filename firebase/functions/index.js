@@ -16,6 +16,10 @@
 'use strict';
 
 var functions = require('firebase-functions');
+var admin = require('firebase-admin');
+
+// Initialize Firebase Admin SDK.
+admin.initializeApp(functions.config().firebase);
 
 // Import for photo processing (Twitter and Share URL)
 var photos = require('./photos.js');
