@@ -31,8 +31,8 @@ import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.View;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
@@ -50,6 +50,7 @@ public class PhotoboothActivity extends Activity {
 
     private static final String TAG = "PhotoboothActivity";
 
+    private static final boolean DEBUG_IGNORE_MESSAGES = false;
     private static final int PERMISSIONS_REQUEST = 1;
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
@@ -58,9 +59,9 @@ public class PhotoboothActivity extends Activity {
     public static final String MESSAGE_RECEIVED = "MESSAGE_RECEIVED";
 
     // Fragments are initialized programmatically, so there's no ID's.  Keep references to them.
-    CameraConnectionFragment cameraFragment = null;
+    private CameraConnectionFragment cameraFragment = null;
 
-    ThermalPrinter mPrinter;
+    private ThermalPrinter mThermalPrinter;
 
     // For testing the artistic styles, will save the original image, the "stylized" image,
     // and the blended combination of the two to device when this flag is set to true.
@@ -69,10 +70,9 @@ public class PhotoboothActivity extends Activity {
     // For testing:  Just take one picture and apply all styles, saving images internally.
     public static final boolean PREVIEW_DUMP_DEBUG = false;
 
-    private static final String TEST_LINK1 = "https://goo.gl/TFK7pt";
-    private static final String TEST_LINK2 = "https://goo.gl/f9BGb4";
+    public static final boolean USE_THERMAL_PRINTER = false;
 
-    TensorflowStyler mTensorflowStyler;
+    private TensorflowStyler mTensorflowStyler;
 
     // Background threads specifically for Tensorflow
     /**
@@ -94,9 +94,7 @@ public class PhotoboothActivity extends Activity {
 
     private FirebaseStorageAdapter mFirebaseAdapter;
 
-
     private Bitmap mCurrSourceBitmap;
-
     private Bitmap mCurrStyledBitmap;
 
     // Depending on the button and how "noisy" the signal is, one physical button press can show
@@ -125,7 +123,9 @@ public class PhotoboothActivity extends Activity {
             requestPermission();
         }
 
-        mPrinter = new ThermalPrinter(this);
+        if (USE_THERMAL_PRINTER) {
+            mThermalPrinter = new ThermalPrinter(this);
+        }
 
         mTensorflowStyler = new TensorflowStyler(this);
         mTensorflowStyler.initializeTensorFlow();
@@ -273,61 +273,74 @@ public class PhotoboothActivity extends Activity {
         }
     }
 
-    Uri[] links = new Uri[2];
-    public static final int ORIG_LINK_INDEX = 0;
-    public static final int STYLED_LINK_INDEX = 1;
+    private static final int ORIG_LINK_INDEX = 0;
+    private static final int STYLED_LINK_INDEX = 1;
 
-    public synchronized void gatherLinks(Uri link, int index) {
+    public synchronized boolean gatherLinks(Uri[] links, Uri link, int index) {
+        Log.d(TAG, "Got short link for image " + index);
         links[index] = link;
         if (links[0] != null & links[1] != null) {
-            Log.d(TAG, "Both photos uploaded.  Printing.");
-
-            mPrinter.printQrCode(links[0].toString(), 200, links[0].toString());
-            mPrinter.printQrCode(links[1].toString(), 200, links[1].toString());
-
-            links[0] = null;
-            links[1] = null;
+            Log.d(TAG, "Got all short links.");
+            return true;
         }
+        return false;
     }
 
     public void processChosenImage(boolean attendeeRequestingShare) {
-        runInBackground(() -> {
 
-            if (mCurrStyledBitmap != null && mCurrSourceBitmap != null) {
+        final Uri[] links = new Uri[2];
+
+        runInBackground(() -> {
+            if (mCurrSourceBitmap != null) {
+                final Bitmap originalBitmap = mCurrSourceBitmap;
+                final Bitmap styledBitmap = mCurrStyledBitmap;
+                if (mCurrStyledBitmap != null) {
+                    // we should use both source and style bitmap
                     FirebaseStorageAdapter.PhotoUploadedListener originalListener =
                             url -> {
-                                // mPrinter.printQrCode(url.toString(), 200, url.toString());
                                 Log.d(TAG, "Original uploaded successfully, printing shortcode: " +
                                         url);
-                                gatherLinks(url, ORIG_LINK_INDEX);
+                                if (gatherLinks(links, url, ORIG_LINK_INDEX)) {
+                                    createAndPrintPhotoStrip(originalBitmap, styledBitmap,
+                                            links[0].toString(), links[1].toString());
+                                }
                             };
 
                     FirebaseStorageAdapter.PhotoUploadedListener styledListener =
                             url -> {
-                                // mPrinter.printQrCode(url.toString(), 200, url.toString());
                                 Log.d(TAG, "Styled uploaded successfully, printing shortcode: " +
                                         url);
-                                gatherLinks(url, STYLED_LINK_INDEX);
+                                if (gatherLinks(links, url, STYLED_LINK_INDEX)) {
+                                    createAndPrintPhotoStrip(originalBitmap, styledBitmap,
+                                            links[0].toString(), links[1].toString());
+                                }
                             };
 
                     Log.d(TAG, "Uploading bitmaps");
-                    mFirebaseAdapter.uploadBitmaps(mCurrSourceBitmap, mCurrStyledBitmap,
+                    mFirebaseAdapter.uploadBitmaps(originalBitmap, styledBitmap,
                             originalListener, styledListener, attendeeRequestingShare);
-            } else if (mCurrSourceBitmap != null && mCurrStyledBitmap == null) {
-                FirebaseStorageAdapter.PhotoUploadedListener uploadListener =
-                        url -> {
-                            Log.d(TAG, "ONLY original uploaded successfully, printing shortcode: " +
-                                    url);
-                            mPrinter.printQrCode(url.toString(), 200, url.toString());
-                        };
-                mFirebaseAdapter.uploadBitmap(mCurrSourceBitmap, "original", null,
-                        uploadListener,attendeeRequestingShare);
+                } else {
+                    // user requested for no style, so we should only use source bitmap
+                    FirebaseStorageAdapter.PhotoUploadedListener uploadListener =
+                            url -> {
+                                Log.d(TAG, "ONLY original uploaded successfully, printing shortcode: " +
+                                        url);
+                                createAndPrintPhotoStrip(originalBitmap, styledBitmap,
+                                        url.toString(), null);
+                            };
+                    mFirebaseAdapter.uploadBitmap(originalBitmap, "original", null,
+                            uploadListener, attendeeRequestingShare);
+                }
             } else {
                 Log.d(TAG, "No bitmap to process.");
             }
 
-            mCurrSourceBitmap = null;
-            mCurrStyledBitmap = null;
+            if (mCurrSourceBitmap != null) {
+                mCurrSourceBitmap = null;
+            }
+            if (mCurrStyledBitmap != null) {
+                mCurrStyledBitmap = null;
+            }
 
             processingSecondaryButton = false;
             enterPreviewMode();
@@ -375,25 +388,22 @@ public class PhotoboothActivity extends Activity {
                 blended, "preview-" + style + "-blended.png");
     }
 
-    protected void previewLayout() {
-        final PhotoStripSpec spec = new PhotoStripSpec(mCurrSourceBitmap, mCurrStyledBitmap,
-                TEST_LINK1, TEST_LINK2);
-        final LayoutPreviewFragment previewFragment = new LayoutPreviewFragment();
-        getFragmentManager()
-                .beginTransaction()
-                .addToBackStack(null)
-                .replace(R.id.container, previewFragment)
-                .commit();
-
-        new AsyncTask<Void, Void, Bitmap>() {
-            @Override
-            protected Bitmap doInBackground(Void... params) {
-                return mPhotoStripBuilder.createPhotoStrip(spec);
+    protected void createAndPrintPhotoStrip(Bitmap original, Bitmap styled, String shortLink1, String shortLink2) {
+        final PhotoStripSpec spec = new PhotoStripSpec(original, styled, shortLink1, shortLink2);
+        if (USE_THERMAL_PRINTER) {
+            mThermalPrinter.printQrCode(shortLink1, 200, shortLink1);
+            if (shortLink2 != null) {
+                mThermalPrinter.printQrCode(shortLink2, 200, shortLink2);
             }
-
+        }
+        new AsyncTask<Void, Void, Void>() {
             @Override
-            protected void onPostExecute(Bitmap bitmap) {
-                previewFragment.preview(bitmap);
+            protected Void doInBackground(Void... params) {
+                Bitmap bitmap = mPhotoStripBuilder.createPhotoStrip(spec);
+                ImageUtils.saveBitmap(bitmap, "photostrip_debug.png");
+                HttpImagePrint.print(bitmap);
+                bitmap.recycle();
+                return null;
             }
         }.execute();
     }
@@ -444,7 +454,9 @@ public class PhotoboothActivity extends Activity {
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter(MESSAGE_RECEIVED));
 
-        FirebaseMessaging.getInstance().subscribeToTopic("io-photobooth");
+        if (!DEBUG_IGNORE_MESSAGES) {
+            FirebaseMessaging.getInstance().subscribeToTopic("io-photobooth");
+        }
 
         startInferenceThread();
     }
@@ -511,9 +523,9 @@ public class PhotoboothActivity extends Activity {
     @Override
     protected void onDestroy() {
         destroyButtons();
-        if (mPrinter != null) {
-            mPrinter.close();
-            mPrinter = null;
+        if (mThermalPrinter != null) {
+            mThermalPrinter.close();
+            mThermalPrinter = null;
         }
         super.onDestroy();
     }

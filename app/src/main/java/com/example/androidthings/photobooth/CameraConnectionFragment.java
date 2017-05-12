@@ -160,16 +160,6 @@ public class CameraConnectionFragment extends Fragment {
 
     @Override
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
-        if (BuildConfig.SHOW_DEBUG_BUTTONS) {
-            view.findViewById(R.id.btn_capture).setVisibility(View.VISIBLE);
-            view.findViewById(R.id.btn_capture).setOnClickListener(v -> {
-                ((PhotoboothActivity)getActivity()).stylizePicture();
-            });
-            view.findViewById(R.id.btn_preview_layout).setVisibility(View.VISIBLE);
-            view.findViewById(R.id.btn_preview_layout).setOnClickListener(v -> {
-                ((PhotoboothActivity)getActivity()).previewLayout();
-            });
-        }
         startPreview();
     }
 
