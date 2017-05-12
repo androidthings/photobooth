@@ -123,7 +123,7 @@ PhotoHandler.prototype.tweetImage = function(object, shortUrl) {
     // TODO: this function should make a tweet with an attached image
     // that has the text 'Thanks for visiting #io17 @user! Here's your
     // picture' or similar.
-    var msg = "Hey! Here's your photo: " + shortUrl;
+    var msg = "Thanks for visiting us at #io17! Here's your photo: " + shortUrl;
 
     var that = this;
     return this.getImageData(object)
