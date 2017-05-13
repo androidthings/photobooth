@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -101,6 +102,22 @@ public class PhotoboothActivity extends Activity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
+
+//        // test
+//        setContentView(R.layout.camera_connection_fragment_stylize);
+//        PhotoStripBuilder strip = new PhotoStripBuilder(this);
+//        Bitmap bitmap = strip.createPhotoStrip(new PhotoStripSpec(
+//                BitmapFactory.decodeFile("/sdcard/tensorflow/preview-1-orig.png"),
+//                BitmapFactory.decodeFile("/sdcard/tensorflow/preview-1-blended.png"),
+//                "https://goo.gl/tR9b00", "https://goo.gl/lbFlbB"
+//                ));
+//
+//        ImageUtils.saveBitmap(bitmap, "strip.png");
+//        ((ImageView) findViewById(R.id.imageView)).setImageBitmap(bitmap);
+//        if (true) {
+//            return;
+//        }
+//        //
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_camera);
@@ -251,7 +268,7 @@ public class PhotoboothActivity extends Activity {
                     originalListener, styledListener, attendeeRequestingShare);
 
             try {
-                if (!latchLocker.await(10, TimeUnit.SECONDS)) {
+                if (!latchLocker.await(15, TimeUnit.SECONDS)) {
                     Log.w(TAG, "Timeout while waiting for short URLs, will proceed anyway");
                 }
             } catch (InterruptedException e) {
@@ -278,7 +295,7 @@ public class PhotoboothActivity extends Activity {
             Bitmap blended = ImageUtils.blendBitmaps(stylizedImage, sourceImage);
             mCurrStyledBitmap = blended;
             runOnUiThread(() -> {
-                if (stylizedImage != null) {
+                if (blended != null) {
                     ImageView snapshotView = (ImageView) findViewById(R.id.imageView);
                     if (snapshotView != null) {
                         snapshotView.setImageBitmap(blended);
@@ -309,7 +326,7 @@ public class PhotoboothActivity extends Activity {
     protected void createAndPrintPhotoStrip(Bitmap original, Bitmap styled, String shortLink1,
                                             String shortLink2, boolean recycleBitmaps) {
         final PhotoStripSpec spec = new PhotoStripSpec(original, styled, shortLink1, shortLink2);
-        if (USE_THERMAL_PRINTER) {
+        if (USE_THERMAL_PRINTER && shortLink1 != null) {
             mThermalPrinter.printQrCode(shortLink1, 200, shortLink1);
             if (shortLink2 != null) {
                 mThermalPrinter.printQrCode(shortLink2, 200, shortLink2);
