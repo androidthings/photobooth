@@ -173,8 +173,11 @@ public class FirebaseStorageAdapter {
 
         // Even if user elects for sharing on social media, we don't want to spam the feed
         // with two images for each person.  When there's a styled image, never share the original.
-        uploadBitmap(original, "original", null, origListener, false);
-        uploadBitmap(styled, "styled", null, styledListener, shareOnSocialMedia);
+        uploadBitmap(original, "original", null, origListener,
+                styled == null && shareOnSocialMedia);
+        if (styled != null) {
+            uploadBitmap(styled, "styled", null, styledListener, shareOnSocialMedia);
+        }
     }
 
 
