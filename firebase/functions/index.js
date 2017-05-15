@@ -68,12 +68,12 @@ exports.photoboothAssistantApp = functions.https.onRequest((req, res) => {
     [APIAI.action.STYLE_PICTURE_APPROVED, handle.sharePhotoInquiryStall],
     [APIAI.action.STYLE_PICTURE_DENIED, handle.sharePhotoInquiry],
     // Uploading the picture
-    [APIAI.action.PICTURE_UPLOAD_APPROVED, handle.photoSelected],
-    [APIAI.action.PICTURE_UPLOAD_DENIED, handle.end],
+    [APIAI.action.PICTURE_UPLOAD_APPROVED, handle.photoShared],
+    [APIAI.action.PICTURE_UPLOAD_DENIED, handle.photoNotShared],
     // Fallback and other actions
     [APIAI.action.FALLBACK_GENERAL, handle.fallbackGeneral],
     [APIAI.action.START_OVER, handle.restart],
-    [APIAI.action.CANCEL, handle.end],
+    [APIAI.action.CANCEL, handle.photoNotShared],
     [APIAI.action.HELP, handle.help],
     [APIAI.action.ABOUT, handle.about],
     [APIAI.action.EASTER_EGG, handle.easterEgg]

@@ -1,6 +1,6 @@
 {
-  "name": "Smart Photobooth Assistant App API.AI Webhook",
-  "description": "A webhook for an assistant app built with API.AI",
+  "name": "IOPhotobooth",
+  "description": "Firebase functions for Google I/O photo booth",
   "version": "0.0.1",
   "private": true,
   "license": "Apache Version 2.0",
@@ -14,8 +14,8 @@
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
-    "actions-on-google": "^1.0.9",
     "@google-cloud/storage": "^1.1.0",
+    "actions-on-google": "^1.0.9",
     "firebase-admin": "^4.2.0",
     "firebase-functions": "^0.5.4",
     "google-cloud": "^0.53.0",

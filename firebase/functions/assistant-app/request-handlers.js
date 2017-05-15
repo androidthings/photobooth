@@ -36,6 +36,7 @@ const PICTURE_STYLE_DONE = 'picture_styled';
 
 // User ID of the Google account used with the photo booth
 const PHOTO_BOOTH_ID = functions.config().assistantapp.photoboothid;
+const PHOTO_BOOTH_ID_TESTING = functions.config().assistantapp.photoboothidtesting;
 
 /**
  * Request handler utility class.
@@ -47,8 +48,9 @@ module.exports = class RequestHandler {
   start (app) {
     // Check the ID of the user, if its not coming from the photobooth
     // tell the user to come to the photobooth at I/O
-    console.log('User ID: ' + app.getUser().userId);
-    if (app.getUser().userId !== PHOTO_BOOTH_ID) {
+    let userId = app.getUser().userId;
+    console.log('User ID: ' + userId);
+    if (userId !== PHOTO_BOOTH_ID && userId !== PHOTO_BOOTH_ID_TESTING) {
       return app.tell(responseFetch.getResponse('NOT_IN_PHOTOBOOTH'));
     }
 
@@ -64,7 +66,7 @@ module.exports = class RequestHandler {
     console.log('Command delay: ' + commandDelay);
 
     // Send a message to Firebase Cloud Messaging to capture at the right moment
-    sendFirebaseCommand();
+    sendFirebaseCommand(BEGIN_PREVIEW);
     setTimeout(sendFirebaseCommand, commandDelay, COMMAND_CAPTURE);
     return app.ask(response);
   }
@@ -95,9 +97,9 @@ module.exports = class RequestHandler {
 
     // Get take picture response
     let response2;
-    let commandDealy2;
+    let commandDelay2;
     [response2, commandDelay2] = responseFetch.getTakePictureResponse();
-    //combine the responses and delays
+    // Combine the responses and delays
     let response = response1 + response2;
     let commandDelay = commandDelay1 + commandDelay2;
     response = response.split('</speak><speak>').join('');

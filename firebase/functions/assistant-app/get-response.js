@@ -23,19 +23,19 @@ const SHUTTER_SOUND_TAG = '**shutter**';
 const SHUTTER_SOUND_SSML = '<audio src="https://storage.googleapis.com/smart-photobooth-93105.appspot.com/sounds/shutter.mp3" />';
 const DIAL_UP_SOUND_TAG = '**dialup**';
 const DIAL_UP_SOUND_SSML = '<audio src="https://storage.googleapis.com/smart-photobooth-93105.appspot.com/sounds/DialUp.mp3" />';
-const RUSTLING_TAG = '**rustling**'
-const RUSTLING_SSML = '<audio src="https://actions.google.com/sounds/v1/household/bacon_out_of_package.ogg" />'
+const RUSTLING_TAG = '**rustling**';
+const RUSTLING_SSML = '<audio src="https://actions.google.com/sounds/v1/household/bacon_out_of_package.ogg" />';
 const BOING_TAG = '**boing**';
-const BOING_SSML = '<audio src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" />'
+const BOING_SSML = '<audio src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" />';
 
 const GENERAL_DELAY_ADJUST = 1.0;
-const WELCOME_DELAY_OFFSET = 3000;
+const WELCOME_DELAY_OFFSET = 2610;
 
 /**
  * Prompt fetching utility class.
  */
 module.exports = class ResponseFetch {
-  constructor(){
+  constructor() {
     this.responseCounter = {};
   }
 
@@ -46,14 +46,14 @@ module.exports = class ResponseFetch {
    * @return {string} Randomly chosen string from array.
    */
   getNextResponse_ (responseName) {
-    let qtyResponseOptions = responses[responseName].length
-    
+    let qtyResponseOptions = responses[responseName].length;
+
     // If there is only one response option, return it
-    if (qtyResponseOptions == 1) {
+    if (qtyResponseOptions === 1) {
       return responses[responseName][0];
     }
 
-    let currentIndex = this.responseCounter[responseName]
+    let currentIndex = this.responseCounter[responseName];
     if (currentIndex < qtyResponseOptions) {
       this.responseCounter[responseName] += 1;
       return responses[responseName][currentIndex];
@@ -122,7 +122,7 @@ module.exports = class ResponseFetch {
     let response;
     let commandDelay;
     if (index === undefined) {
-      [response, commandDelay]= this.getNextResponse_(name);
+      [response, commandDelay] = this.getNextResponse_(name);
     } else {
       [response, commandDelay] = responses[name][index];
     }
