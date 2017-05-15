@@ -160,7 +160,7 @@ public class CameraConnectionFragment extends Fragment {
 
     @Override
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
-        startPreview();
+        // startPreview();
     }
 
     @Override
@@ -183,8 +183,11 @@ public class CameraConnectionFragment extends Fragment {
         try {
             cameraOpenCloseLock.acquire();
             if (captureSession != null) {
-                captureSession.stopRepeating();
-                captureSession.close();
+                // CaptureSession is closed automatically if camera was closed elsewhere.
+                if(cameraDevice != null) {
+                    captureSession.stopRepeating();
+                    captureSession.close();
+                }
                 captureSession = null;
             }
             if (cameraDevice != null) {

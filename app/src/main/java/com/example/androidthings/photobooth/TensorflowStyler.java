@@ -21,6 +21,10 @@ import android.util.Log;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
+import java.sql.Date;
+import java.util.Calendar;
+import java.util.Random;
+
 /**
  * Stylizes the camera preview according to "A Learned Representation For Artistic Style"
  * (https://arxiv.org/abs/1610.07629)
@@ -60,7 +64,7 @@ public class TensorflowStyler {
         intValues = new int[INPUT_SIZE * INPUT_SIZE];
         floatValues = new float[INPUT_SIZE * INPUT_SIZE * 3];
 
-        setStyle(0);
+        setNextStyle();
     }
 
     public void saveStyleExamples(Bitmap originalBitmap) {
@@ -89,7 +93,8 @@ public class TensorflowStyler {
     }
 
     public void setNextStyle() {
-        int newStyleIndex = (mSelectedStyleIndex + 1) % PORTRAIT_STYLE_INDEXES.length;
+        Random random = new Random(Calendar.getInstance().getTimeInMillis());
+        int newStyleIndex = random.nextInt(PORTRAIT_STYLE_INDEXES.length);
         setStyle(newStyleIndex);
     }
 
