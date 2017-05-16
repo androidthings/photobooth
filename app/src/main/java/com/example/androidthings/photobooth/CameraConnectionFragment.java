@@ -260,7 +260,6 @@ public class CameraConnectionFragment extends Fragment {
         
     }
 
-
     public void startPreview() {
         imagePreviewListener.setPreviewMode(true);
         if (cameraDevice != null && captureSession != null) {
@@ -361,5 +360,11 @@ public class CameraConnectionFragment extends Fragment {
             return null;
         }
         return Bitmap.createBitmap(previewBitmap);
+    }
+
+    public void clearLastImage() {
+        if (imagePreviewListener != null) {
+            imagePreviewListener.clearLastImage();
+        }
     }
 }

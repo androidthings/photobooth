@@ -24,9 +24,11 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="480dp"
-        android:layout_height="480dp"
-        android:layout_marginTop="32dp"
+        android:layout_width="480px"
+        android:layout_height="480px"
+        android:layout_marginTop="64dp"
         android:layout_weight="1"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/assistant_prompt_image"
+        />
 </RelativeLayout>

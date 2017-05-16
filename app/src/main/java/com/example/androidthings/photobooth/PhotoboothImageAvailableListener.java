@@ -70,9 +70,11 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             image = reader.acquireLatestImage();
 
             if (image == null) {
+                computing = false;
                 return;
             } else if (!mInPreviewMode) {
                 image.close();
+                computing = false;
                 return;
             } else if (computing) {
                 image.close();
@@ -109,6 +111,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
             }
             Log.e(TAG, "Exception!");
             Trace.endSection();
+            computing = false;
             return;
         }
 
@@ -142,6 +145,13 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
                     });
         } else {
             Log.d(TAG, "Update did not occur.  Likely not in preview mode");
+        }
+    }
+
+    public void clearLastImage() {
+        if (mLatestBitmap != null && !mLatestBitmap.isRecycled()) {
+            mLatestBitmap.recycle();
+            mLatestBitmap = null;
         }
     }
 

@@ -180,7 +180,6 @@ public class FirebaseStorageAdapter {
         }
     }
 
-
     UploadTask signInAndUploadBitmap(Bitmap bitmap, String prefix, String suffix, boolean share) {
         UploadTask uploadTask = (UploadTask) mAuth.signInAnonymously()
                 .continueWithTask(task -> {

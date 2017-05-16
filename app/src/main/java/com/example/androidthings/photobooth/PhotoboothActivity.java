@@ -21,7 +21,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -281,6 +280,9 @@ public class PhotoboothActivity extends Activity {
             mCurrStyledBitmap = null;
 
             mProcessing.set(false);
+            runOnUiThread(() -> {
+                startOver();
+            });
         });
     }
 
@@ -395,15 +397,19 @@ public class PhotoboothActivity extends Activity {
                     showSnapshot();
                     break;
                 case FcmContract.COMMAND_STYLE:
+                    Log.d(TAG, "Styling");
                     stylizeAndDisplayBitmap(mCurrSourceBitmap);
                     break;
                 case FcmContract.UPLOAD:
+                    Log.d(TAG, "uploading");
                     processChosenImage(false);
                     break;
                 case FcmContract.UPLOAD_AND_SHARE:
+                    Log.d(TAG, "uploading and sharing.");
                     processChosenImage(true);
                     break;
                 case FcmContract.COMMAND_START_OVER:
+                    Log.d(TAG, "Starting over.");
                     startOver();
                     break;
 
@@ -422,8 +428,9 @@ public class PhotoboothActivity extends Activity {
         }
         mCurrStyledBitmap = null;
         cameraFragment.stopPreview();
+
         ((ImageView) findViewById(R.id.imageView))
-                .setImageResource(android.R.color.transparent);
+                .setImageResource(R.drawable.assistant_prompt_image);
     }
 
     protected void runInBackground(final Runnable r) {

@@ -143,8 +143,7 @@ public class PhotoStripBuilder {
         canvas.drawBitmap(
                 spec.mStylizedImage == null ? spec.mOriginalImage : spec.mStylizedImage,
                 null,
-                new Rect(imageLeftHorizMargin, MAcd
-                        cd RGIN, WIDTH - imageRightHorizMargin, WIDTH - MARGIN*4),
+                new Rect(imageLeftHorizMargin, MARGIN, WIDTH - imageRightHorizMargin, WIDTH - MARGIN*4),
                 paint);
 
         canvas.translate(MARGIN*2, WIDTH + MARGIN);
