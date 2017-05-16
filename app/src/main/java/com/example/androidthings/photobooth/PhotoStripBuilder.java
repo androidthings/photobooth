@@ -22,6 +22,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
@@ -40,7 +41,9 @@ import java.util.Map;
 public class PhotoStripBuilder {
 
     private static final String TAG = "PhotoStripBuilder";
-    private static final int WIDTH = 480;
+    private static final int MARGIN = 16;
+
+    private static final int WIDTH = 480 + MARGIN * 2;
     private static final int WIDTH_HALF = WIDTH / 2;
 
     private Drawable mIoLogo;
@@ -68,6 +71,9 @@ public class PhotoStripBuilder {
     }
 
     private static Bitmap createQrCode(String data, int size) {
+        if (data == null) {
+            return null;
+        }
         Map<EncodeHintType, ErrorCorrectionLevel> hintMap = new HashMap<>();
         hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H); // H = 30% damage
 
@@ -94,7 +100,7 @@ public class PhotoStripBuilder {
     }
 
     public PhotoStripBuilder(Context context) {
-        mIoLogo = context.getDrawable(R.drawable.io17_logo);
+        mIoLogo = context.getDrawable(R.drawable.ic_googleio17);
     }
 
     public Bitmap createPhotoStrip(PhotoStripSpec spec) {
@@ -122,21 +128,33 @@ public class PhotoStripBuilder {
     }
 
     private void drawSpec(PhotoStripSpec spec, Canvas canvas, Paint paint) {
-        final int margin = 16;
-        final int halfMargin = 8;
+        final int halfMargin = MARGIN / 2;
 
         // Starting from the top: draw the two images, then the logo
         canvas.save();
-        canvas.drawBitmap(spec.mOriginalImage, 0, 0, paint);
-        canvas.translate(0, WIDTH + halfMargin);
-        canvas.drawBitmap(spec.mStylizedImage, 0, 0, paint);
-        canvas.translate(WIDTH_HALF, WIDTH + margin);
 
-        int logoWidth = WIDTH_HALF - margin;
-        float logoScale = logoWidth / (float) mIoLogo.getIntrinsicWidth();
-        int logoHeight = (int)(logoScale * mIoLogo.getIntrinsicHeight() + 0.5f);
-        mIoLogo.setBounds(0, 0, logoWidth, logoHeight);
+        final int imageLeftHorizMargin = MARGIN*3;
+        final int imageRightHorizMargin = MARGIN*2;
+        canvas.drawBitmap(spec.mOriginalImage,
+                null,
+                new Rect(imageLeftHorizMargin, MARGIN*3, WIDTH - imageRightHorizMargin, WIDTH - MARGIN*3),
+                paint);
+        canvas.translate(0, WIDTH);
+        canvas.drawBitmap(
+                spec.mStylizedImage == null ? spec.mOriginalImage : spec.mStylizedImage,
+                null,
+                new Rect(imageLeftHorizMargin, MAcd
+                        cd RGIN, WIDTH - imageRightHorizMargin, WIDTH - MARGIN*4),
+                paint);
+
+        canvas.translate(MARGIN*2, WIDTH + MARGIN);
+        int logoWidth = WIDTH - (MARGIN * 4);
+
+        float gLogoScale = logoWidth / (float) mIoLogo.getIntrinsicWidth();
+        int gLogoHeight = (int)(gLogoScale * mIoLogo.getIntrinsicHeight() + 0.5f);
+        mIoLogo.setBounds(0, 0, logoWidth, gLogoHeight);
         mIoLogo.draw(canvas);
+
         canvas.restore();
 
         // From the bottom: draw the two QR codes, then the text
@@ -156,18 +174,25 @@ public class PhotoStripBuilder {
         }
 
         float textY = WIDTH_HALF;
-        paint.setTextSize(28);
+        paint.setTextSize(26);
         paint.setTypeface(Typeface.MONOSPACE);
         if (!TextUtils.isEmpty(spec.mOriginalQrLink)) {
-            canvas.drawText(spec.mOriginalQrLink, margin, textY, paint);
+            String text = spec.mOriginalQrLink;
+            if (text.startsWith("https://")) {
+                text = text.substring(8);
+            }
+            canvas.drawText(text, MARGIN*2, textY, paint);
         }
-        textY = textY - paint.getTextSize() - halfMargin;
+        canvas.save();
+        canvas.translate(WIDTH_HALF, 0);
+
         if (!TextUtils.isEmpty(spec.mStylizedQrLink)) {
-            canvas.drawText(spec.mStylizedQrLink, margin, textY, paint);
+            String text = spec.mStylizedQrLink;
+            if (text.startsWith("https://")) {
+                text = text.substring(8);
+            }
+            canvas.drawText(text, MARGIN, textY, paint);
         }
-        textY = textY - paint.getTextSize() - margin;
-        paint.setTypeface(Typeface.DEFAULT);
-        paint.setTextSize(40);
-        canvas.drawText("Your photos", margin, textY, paint);
+        canvas.restore();
     }
 }
