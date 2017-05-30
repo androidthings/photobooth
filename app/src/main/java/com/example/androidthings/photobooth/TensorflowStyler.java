@@ -21,7 +21,6 @@ import android.util.Log;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
-import java.sql.Date;
 import java.util.Calendar;
 import java.util.Random;
 
@@ -32,26 +31,21 @@ import java.util.Random;
 public class TensorflowStyler {
 
     public static final String TAG = "TensorflowStyler";
-
-    Context mContext;
-
     private static final int INPUT_SIZE = 480;
-
     private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
     private static final String INPUT_NODE = "input";
     private static final String STYLE_NODE = "style_num";
     private static final String OUTPUT_NODE = "transformer/expand/conv3/conv/Sigmoid";
     private static final int NUM_RAW_STYLES = 26;
-
     private final float[] styleVals = new float[NUM_RAW_STYLES];
-    private int[] intValues;
-    private float[] floatValues;
-
-    private TensorFlowInferenceInterface inferenceInterface;
-
     // Of the group of stylizations being used, only a subset are good for portraits.
     // This is the subset of styles we should actually use.
-    private final int[] PORTRAIT_STYLE_INDEXES = {2,4,5,7,8,10,12,14,19};
+    private final int[] PORTRAIT_STYLE_INDEXES = {2, 4, 5, 7, 8, 10, 12, 14, 19};
+    Context mContext;
+    int mSelectedStyleIndex = 0;
+    private int[] intValues;
+    private float[] floatValues;
+    private TensorFlowInferenceInterface inferenceInterface;
 
     public TensorflowStyler(Context context) {
         mContext = context;
@@ -78,8 +72,6 @@ public class TensorflowStyler {
             ImageUtils.saveBitmap(blended, "preview-" + i + "-blended.png");
         }
     }
-
-    int mSelectedStyleIndex = 0;
 
     public void setStyle(int selectedStyle) {
         mSelectedStyleIndex = selectedStyle;

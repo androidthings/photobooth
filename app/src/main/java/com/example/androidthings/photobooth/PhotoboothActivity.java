@@ -46,32 +46,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PhotoboothActivity extends Activity {
 
-    private static final String TAG = "PhotoboothActivity";
-
     public static final String MESSAGE_RECEIVED = "MESSAGE_RECEIVED";
-
+    // For testing the artistic styles, will save the original image, the "stylized" image,
+    // and the blended combination of the two to device when this flag is set to true.
+    public static final boolean IMAGE_PREVIEW_DEBUG = false;
+    // For testing:  Just take one picture and apply all styles, saving images internally.
+    public static final boolean PREVIEW_DUMP_DEBUG = false;
+    public static final boolean USE_THERMAL_PRINTER = false;
+    private static final String TAG = "PhotoboothActivity";
     private static final String PRIMARY_BUTTON_GPIO_PIN = "BCM23";
     private static final String SECONDARY_BUTTON_GPIO_PIN = "BCM24";
-
     /**
      * When set to true, printing and remote message handling (FCM) will be disabled.
      */
     private static final boolean DEBUG_DRYRUN = false;
-
     // Fragments are initialized programmatically, so there's no ID's.  Keep references to them.
     private CameraConnectionFragment cameraFragment = null;
-
     private ThermalPrinter mThermalPrinter;
-
-    // For testing the artistic styles, will save the original image, the "stylized" image,
-    // and the blended combination of the two to device when this flag is set to true.
-    public static final boolean IMAGE_PREVIEW_DEBUG = false;
-
-    // For testing:  Just take one picture and apply all styles, saving images internally.
-    public static final boolean PREVIEW_DUMP_DEBUG = false;
-
-    public static final boolean USE_THERMAL_PRINTER = false;
-
     private TensorflowStyler mTensorflowStyler;
 
     /**
@@ -96,27 +87,49 @@ public class PhotoboothActivity extends Activity {
     private AtomicBoolean mProcessing = new AtomicBoolean(false);
 
     private PhotoStripBuilder mPhotoStripBuilder;
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            String message = intent.getStringExtra(FcmContract.KEY_FOR_COMMAND);
+            Log.d("receiver", "Got message: " + message);
+            switch (message) {
+                case FcmContract.COMMAND_PREVIEW:
+                    Log.d(TAG, "Previewing.");
+                    cameraFragment.startPreview();
+                    break;
+                case FcmContract.COMMAND_CAPTURE:
+                    Log.d("receiver", "Capturing.");
+                    cameraFragment.stopPreview();
+                    takeSnapshot();
+                    showSnapshot();
+                    break;
+                case FcmContract.COMMAND_STYLE:
+                    Log.d(TAG, "Styling");
+                    stylizeAndDisplayBitmap(mCurrSourceBitmap);
+                    break;
+                case FcmContract.UPLOAD:
+                    Log.d(TAG, "uploading");
+                    processChosenImage(false);
+                    break;
+                case FcmContract.UPLOAD_AND_SHARE:
+                    Log.d(TAG, "uploading and sharing.");
+                    processChosenImage(true);
+                    break;
+                case FcmContract.COMMAND_START_OVER:
+                    Log.d(TAG, "Starting over.");
+                    startOver();
+                    break;
+
+            }
+        }
+    };
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
 
-//        // test
-//        setContentView(R.layout.camera_connection_fragment_stylize);
-//        PhotoStripBuilder strip = new PhotoStripBuilder(this);
-//        Bitmap bitmap = strip.createPhotoStrip(new PhotoStripSpec(
-//                BitmapFactory.decodeFile("/sdcard/tensorflow/preview-1-orig.png"),
-//                BitmapFactory.decodeFile("/sdcard/tensorflow/preview-1-blended.png"),
-//                "https://goo.gl/tR9b00", "https://goo.gl/lbFlbB"
-//                ));
-//
-//        ImageUtils.saveBitmap(bitmap, "strip.png");
-//        ((ImageView) findViewById(R.id.imageView)).setImageBitmap(bitmap);
-//        if (true) {
-//            return;
-//        }
-//        //
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_camera);
@@ -166,8 +179,8 @@ public class PhotoboothActivity extends Activity {
     }
 
     /**
-     *  Initialize a GPIO button button to iterate through different styles and display image on
-     *  screen.
+     * Initialize a GPIO button button to iterate through different styles and display image on
+     * screen.
      */
     protected void initializeButtons() {
         try {
@@ -338,7 +351,11 @@ public class PhotoboothActivity extends Activity {
                 () -> {
                     Bitmap bitmap = mPhotoStripBuilder.createPhotoStrip(spec);
                     ImageUtils.saveBitmap(bitmap, "photostrip_debug.png");
-                    HttpImagePrint.print(bitmap);
+
+                    // Assuming print code has been implemented,
+                    // Here's where you'd send the bitmap off to the printer.
+
+
                     bitmap.recycle();
                     if (recycleBitmaps) {
                         if (original != null) {
@@ -362,7 +379,7 @@ public class PhotoboothActivity extends Activity {
                 (thread, throwable) -> {
                     Log.e(TAG, "Background thread exception, recreating activity", throwable);
                     runOnUiThread(PhotoboothActivity.this::recreate);
-            });
+                });
         inferenceHandler = new Handler(inferenceThread.getLooper());
     }
 
@@ -378,44 +395,6 @@ public class PhotoboothActivity extends Activity {
             Log.e(TAG, "Exception!");
         }
     }
-
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // Get extra data included in the Intent
-            String message = intent.getStringExtra(FcmContract.KEY_FOR_COMMAND);
-            Log.d("receiver", "Got message: " + message);
-            switch (message) {
-                case FcmContract.COMMAND_PREVIEW:
-                    Log.d(TAG, "Previewing.");
-                    cameraFragment.startPreview();
-                    break;
-                case FcmContract.COMMAND_CAPTURE:
-                    Log.d("receiver", "Capturing.");
-                    cameraFragment.stopPreview();
-                    takeSnapshot();
-                    showSnapshot();
-                    break;
-                case FcmContract.COMMAND_STYLE:
-                    Log.d(TAG, "Styling");
-                    stylizeAndDisplayBitmap(mCurrSourceBitmap);
-                    break;
-                case FcmContract.UPLOAD:
-                    Log.d(TAG, "uploading");
-                    processChosenImage(false);
-                    break;
-                case FcmContract.UPLOAD_AND_SHARE:
-                    Log.d(TAG, "uploading and sharing.");
-                    processChosenImage(true);
-                    break;
-                case FcmContract.COMMAND_START_OVER:
-                    Log.d(TAG, "Starting over.");
-                    startOver();
-                    break;
-
-            }
-        }
-    };
 
     private void startOver() {
         Log.d(TAG, "Starting over, start");

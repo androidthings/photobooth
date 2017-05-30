@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 Google Inc.
+ * Copyright 2017 The Android Open Source Project.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,26 +48,8 @@ public class PhotoStripBuilder {
 
     private Drawable mIoLogo;
 
-    public static class PhotoStripSpec {
-        final Bitmap mOriginalImage;
-        final Bitmap mStylizedImage;
-
-        final String mOriginalQrLink;
-        final String mStylizedQrLink;
-        final Bitmap mOriginalQrImage;
-        final Bitmap mStylizedQrImage;
-
-        PhotoStripSpec(Bitmap originalImage, Bitmap stylizedImage, String originalQrLink,
-                String stylizedQrLink) {
-            mOriginalImage = originalImage;
-            mStylizedImage = stylizedImage;
-            mOriginalQrLink = originalQrLink;
-            mStylizedQrLink = stylizedQrLink;
-
-            int size = mOriginalImage.getWidth() / 2;
-            mOriginalQrImage = createQrCode(mOriginalQrLink, size);
-            mStylizedQrImage = createQrCode(mStylizedQrLink, size);
-        }
+    public PhotoStripBuilder(Context context) {
+        mIoLogo = context.getDrawable(R.drawable.ic_googleio17);
     }
 
     private static Bitmap createQrCode(String data, int size) {
@@ -97,10 +79,6 @@ public class PhotoStripBuilder {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Config.RGB_565);
         bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
         return bitmap;
-    }
-
-    public PhotoStripBuilder(Context context) {
-        mIoLogo = context.getDrawable(R.drawable.ic_googleio17);
     }
 
     public Bitmap createPhotoStrip(PhotoStripSpec spec) {
@@ -133,24 +111,24 @@ public class PhotoStripBuilder {
         // Starting from the top: draw the two images, then the logo
         canvas.save();
 
-        final int imageLeftHorizMargin = MARGIN*3;
-        final int imageRightHorizMargin = MARGIN*2;
+        final int imageLeftHorizMargin = MARGIN * 3;
+        final int imageRightHorizMargin = MARGIN * 2;
         canvas.drawBitmap(spec.mOriginalImage,
                 null,
-                new Rect(imageLeftHorizMargin, MARGIN*3, WIDTH - imageRightHorizMargin, WIDTH - MARGIN*3),
+                new Rect(imageLeftHorizMargin, MARGIN * 3, WIDTH - imageRightHorizMargin, WIDTH - MARGIN * 3),
                 paint);
         canvas.translate(0, WIDTH);
         canvas.drawBitmap(
                 spec.mStylizedImage == null ? spec.mOriginalImage : spec.mStylizedImage,
                 null,
-                new Rect(imageLeftHorizMargin, MARGIN, WIDTH - imageRightHorizMargin, WIDTH - MARGIN*4),
+                new Rect(imageLeftHorizMargin, MARGIN, WIDTH - imageRightHorizMargin, WIDTH - MARGIN * 4),
                 paint);
 
-        canvas.translate(MARGIN*2, WIDTH + MARGIN);
+        canvas.translate(MARGIN * 2, WIDTH + MARGIN);
         int logoWidth = WIDTH - (MARGIN * 4);
 
         float gLogoScale = logoWidth / (float) mIoLogo.getIntrinsicWidth();
-        int gLogoHeight = (int)(gLogoScale * mIoLogo.getIntrinsicHeight() + 0.5f);
+        int gLogoHeight = (int) (gLogoScale * mIoLogo.getIntrinsicHeight() + 0.5f);
         mIoLogo.setBounds(0, 0, logoWidth, gLogoHeight);
         mIoLogo.draw(canvas);
 
@@ -180,7 +158,7 @@ public class PhotoStripBuilder {
             if (text.startsWith("https://")) {
                 text = text.substring(8);
             }
-            canvas.drawText(text, MARGIN*2, textY, paint);
+            canvas.drawText(text, MARGIN * 2, textY, paint);
         }
         canvas.save();
         canvas.translate(WIDTH_HALF, 0);
@@ -193,5 +171,27 @@ public class PhotoStripBuilder {
             canvas.drawText(text, MARGIN, textY, paint);
         }
         canvas.restore();
+    }
+
+    public static class PhotoStripSpec {
+        final Bitmap mOriginalImage;
+        final Bitmap mStylizedImage;
+
+        final String mOriginalQrLink;
+        final String mStylizedQrLink;
+        final Bitmap mOriginalQrImage;
+        final Bitmap mStylizedQrImage;
+
+        PhotoStripSpec(Bitmap originalImage, Bitmap stylizedImage, String originalQrLink,
+                       String stylizedQrLink) {
+            mOriginalImage = originalImage;
+            mStylizedImage = stylizedImage;
+            mOriginalQrLink = originalQrLink;
+            mStylizedQrLink = stylizedQrLink;
+
+            int size = mOriginalImage.getWidth() / 2;
+            mOriginalQrImage = createQrCode(mOriginalQrLink, size);
+            mStylizedQrImage = createQrCode(mStylizedQrLink, size);
+        }
     }
 }
