@@ -82,7 +82,7 @@ public class ImageUtils {
     }
 
     public static void convertImageToBitmap(Image image, int width, int height, int[] output,
-            byte[][] cachedYuvBytes) {
+                                            byte[][] cachedYuvBytes) {
         if (cachedYuvBytes == null || cachedYuvBytes.length != 3) {
             cachedYuvBytes = new byte[3][];
         }
@@ -96,7 +96,7 @@ public class ImageUtils {
     }
 
     private static void convertYUV420ToARGB8888(byte[] yData, byte[] uData, byte[] vData, int width,
-            int height, int yRowStride, int uvRowStride, int uvPixelStride, int[] out) {
+                                                int height, int yRowStride, int uvRowStride, int uvPixelStride, int[] out) {
         int i = 0;
         for (int y = 0; y < height; y++) {
             int pY = yRowStride * y;

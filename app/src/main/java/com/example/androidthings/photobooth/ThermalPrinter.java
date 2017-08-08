@@ -37,19 +37,14 @@ import java.util.List;
 
 public class ThermalPrinter {
 
+    private static final byte[] PRINTER_SELECT_BIT_IMAGE_MODE = {0x1B, 0x2A, 33};
     private final String TAG = "ThermalPrinter";
-
-    private UartDevice mDevice;
-
     // Pulled from calling PeripheralManagerService.getUartDeviceList().
     private final String UART_DEVICE_NAME = "USB1-1.2";
 
     private final byte[] PRINTER_INITIALIZE = {0x1B, 0x40};
-    private static final byte[] PRINTER_SELECT_BIT_IMAGE_MODE = {0x1B, 0x2A, 33};
-
     private final byte ESC_CHAR = 0x1B;
     private final byte[] PRINTER_SET_LINE_SPACE_24 = new byte[]{ESC_CHAR, 0x33, 24};
-
     // Slowing down the printer a little and increasing dot density, in order to make the QR
     // codes darker (they're a little faded at default settings).
     // Bytes represent the following: (first two): Print settings.
@@ -57,9 +52,9 @@ public class ThermalPrinter {
     // Heating time: Units of 10 uS.  120 means 1.2 milliseconds.
     // Heating interval: Units of 10 uS. 50 means 0.5 milliseconds.
     private final byte[] PRINTER_DARKER_PRINTING = {0x1B, 0x37, 11, 0x7F, 50};
-
     private final byte[] PRINTER_PRINT_AND_FEED = {0x1B, 0x64};
     private final byte BYTE_LF = 0xA;
+    private UartDevice mDevice;
 
     // Config settings for Ada 597 thermal printer.
     ThermalPrinter(Context c) {
@@ -133,7 +128,7 @@ public class ThermalPrinter {
         final byte[] controlByte = {(byte) (0x00ff & width), (byte) ((0xff00 & width) >> 8)};
         int[] pixels = new int[width * height];
 
-        bitmap.getPixels(pixels,  0, width, 0, 0, width, height);
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
 
         final int BAND_HEIGHT = 24;
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example.androidthings.photobooth;
 
 import android.app.Activity;
@@ -50,54 +51,43 @@ public class CameraConnectionFragment extends Fragment {
     private static final int CAMERA_LOCK_WAIT = 2500;
 
     private static final String TAG = "CameraConnection";
-
-    /**
-     * A {@link CameraCaptureSession } for camera preview.
-     */
-    private CameraCaptureSession captureSession;
-
-    /**
-     * A reference to the opened {@link CameraDevice}.
-     */
-    private CameraDevice cameraDevice;
-
-    /**
-     * The rotation in degrees of the camera sensor from the display.
-     */
-    private Integer sensorOrientation = 0;
-
-    /**
-     * An additional thread for running tasks that shouldn't block the UI.
-     */
-    private HandlerThread backgroundThread;
-
-    /**
-     * A {@link Handler} for running tasks in the background.
-     */
-    private Handler backgroundHandler;
-
-    /**
-     * An {@link ImageReader} that handles preview frame capture.
-     */
-    private ImageReader previewReader;
-
-    /**
-     * {@link android.hardware.camera2.CaptureRequest.Builder} for the camera preview
-     */
-    private CaptureRequest.Builder previewRequestBuilder;
-
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
     private final Semaphore cameraOpenCloseLock = new Semaphore(1);
-
     /**
      * A {@link com.example.androidthings.photobooth.PhotoboothImageAvailableListener} when image becomes available.
      */
     private final PhotoboothImageAvailableListener imagePreviewListener
             = new PhotoboothImageAvailableListener();
-
-
+    /**
+     * A {@link CameraCaptureSession } for camera preview.
+     */
+    private CameraCaptureSession captureSession;
+    /**
+     * A reference to the opened {@link CameraDevice}.
+     */
+    private CameraDevice cameraDevice;
+    /**
+     * The rotation in degrees of the camera sensor from the display.
+     */
+    private Integer sensorOrientation = 0;
+    /**
+     * An additional thread for running tasks that shouldn't block the UI.
+     */
+    private HandlerThread backgroundThread;
+    /**
+     * A {@link Handler} for running tasks in the background.
+     */
+    private Handler backgroundHandler;
+    /**
+     * An {@link ImageReader} that handles preview frame capture.
+     */
+    private ImageReader previewReader;
+    /**
+     * {@link android.hardware.camera2.CaptureRequest.Builder} for the camera preview
+     */
+    private CaptureRequest.Builder previewRequestBuilder;
     /**
      * {@link CameraCaptureSession.CaptureCallback} is called during image capture.
      */
@@ -154,7 +144,7 @@ public class CameraConnectionFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         return inflater.inflate(R.layout.camera_connection_fragment_stylize, container, false);
     }
 
@@ -184,7 +174,7 @@ public class CameraConnectionFragment extends Fragment {
             cameraOpenCloseLock.acquire();
             if (captureSession != null) {
                 // CaptureSession is closed automatically if camera was closed elsewhere.
-                if(cameraDevice != null) {
+                if (cameraDevice != null) {
                     captureSession.stopRepeating();
                     captureSession.close();
                 }
@@ -257,7 +247,6 @@ public class CameraConnectionFragment extends Fragment {
 
         // release camera
         closeCamera();
-        
     }
 
     public void startPreview() {

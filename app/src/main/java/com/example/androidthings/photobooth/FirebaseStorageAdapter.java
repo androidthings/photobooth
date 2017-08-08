@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example.androidthings.photobooth;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.android.gms.tasks.Continuation;
-
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -42,20 +36,13 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
 
 public class FirebaseStorageAdapter {
 
     public final String TAG = "FirebaseStorageAdapter";
+    FirebaseStorage mStorage = FirebaseStorage.getInstance();
     private FirebaseAuth.AuthStateListener mAuthListener;
     private FirebaseAuth mAuth;
-
-    FirebaseStorage mStorage = FirebaseStorage.getInstance();
-
-    public interface PhotoUploadedListener {
-        void onPhotoUploaded(Uri url);
-    }
 
     public FirebaseStorageAdapter() {
         mAuth = FirebaseAuth.getInstance();
@@ -198,7 +185,6 @@ public class FirebaseStorageAdapter {
         return uploadTask;
     }
 
-
     void onStart() {
         mAuth.addAuthStateListener(mAuthListener);
         if (!isUserSignedIn()) {
@@ -227,5 +213,9 @@ public class FirebaseStorageAdapter {
 
     private boolean isUserSignedIn() {
         return mAuth.getCurrentUser() != null;
+    }
+
+    public interface PhotoUploadedListener {
+        void onPhotoUploaded(Uri url);
     }
 }

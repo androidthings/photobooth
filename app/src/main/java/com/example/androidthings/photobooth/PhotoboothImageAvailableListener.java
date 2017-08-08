@@ -50,7 +50,7 @@ public class PhotoboothImageAvailableListener implements OnImageAvailableListene
     private int[] rgbBytes = null;
 
     // Keep reference to most recent bitmap in preview window, as this will be the one stylized.
-    private Bitmap  mLatestBitmap = null;
+    private Bitmap mLatestBitmap = null;
 
     private boolean mInPreviewMode = false;
 
