@@ -38,14 +38,14 @@ Most of the steps here are best described by existing documentation, which is be
   - Follow the instructions for setting up [Google Cloud Storage for Firebase](https://firebase.google.com/docs/storage/android/start).  Be sure to set up [storage security rules](https://firebase.google.com/docs/storage/security/start).  You'll want the rules set so that anybody can download the photos, but only authenticated "users" of the application (only the signed APK for your application) can upload photos.  Here is the rule to copy/paste:
   ```
   service firebase.storage {
-  match /b/{bucket}}/o {
-    match /{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
+      match /b/{bucket}/o {
+        match /{allPaths=**} {
+          allow read: if true;
+          allow write: if request.auth != null;
+        }
+      }
   }
-}
-```
+  ```
 
 - [Deploy the Google Cloud Functions](https://firebase.google.com/docs/functions/get-started) which are located in _project-root_/firebase
   - These interact with multiple services you will also need to set up:
