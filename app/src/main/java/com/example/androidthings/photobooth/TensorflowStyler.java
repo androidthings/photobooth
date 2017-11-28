@@ -52,8 +52,7 @@ public class TensorflowStyler {
     }
 
     public void initializeTensorFlow() {
-        inferenceInterface = new TensorFlowInferenceInterface();
-        inferenceInterface.initializeTensorFlow(mContext.getAssets(), MODEL_FILE);
+        inferenceInterface = new TensorFlowInferenceInterface(mContext.getAssets(), MODEL_FILE);
 
         intValues = new int[INPUT_SIZE * INPUT_SIZE];
         floatValues = new float[INPUT_SIZE * INPUT_SIZE * 3];
@@ -107,12 +106,12 @@ public class TensorflowStyler {
         }
 
         // Copy the input data into TensorFlow.
-        inferenceInterface.fillNodeFloat(
-                INPUT_NODE, new int[]{1, bitmap.getWidth(), bitmap.getHeight(), 3}, floatValues);
-        inferenceInterface.fillNodeFloat(STYLE_NODE, new int[]{NUM_RAW_STYLES}, styleVals);
+        inferenceInterface.feed(INPUT_NODE, floatValues, 1, bitmap.getWidth(),
+                bitmap.getHeight(), 3);
+        inferenceInterface.feed(STYLE_NODE, styleVals, NUM_RAW_STYLES);
 
-        inferenceInterface.runInference(new String[]{OUTPUT_NODE});
-        inferenceInterface.readNodeFloat(OUTPUT_NODE, floatValues);
+        inferenceInterface.run(new String[]{OUTPUT_NODE});
+        inferenceInterface.fetch(OUTPUT_NODE, floatValues);
 
         for (int i = 0; i < intValues.length; ++i) {
             intValues[i] =
