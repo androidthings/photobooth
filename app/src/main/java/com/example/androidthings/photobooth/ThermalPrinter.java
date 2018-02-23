@@ -20,7 +20,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.util.Log;
 
-import com.google.android.things.pio.PeripheralManagerService;
+import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.UartDevice;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -39,7 +39,7 @@ public class ThermalPrinter {
 
     private static final byte[] PRINTER_SELECT_BIT_IMAGE_MODE = {0x1B, 0x2A, 33};
     private final String TAG = "ThermalPrinter";
-    // Pulled from calling PeripheralManagerService.getUartDeviceList().
+    // Pulled from calling PeripheralManager.getUartDeviceList().
     private final String UART_DEVICE_NAME = "USB1-1.2";
 
     private final byte[] PRINTER_INITIALIZE = {0x1B, 0x40};
@@ -58,7 +58,7 @@ public class ThermalPrinter {
 
     // Config settings for Ada 597 thermal printer.
     ThermalPrinter(Context c) {
-        PeripheralManagerService manager = new PeripheralManagerService();
+        PeripheralManager manager = PeripheralManager.getInstance();
         try {
             List<String> devices = manager.getUartDeviceList();
             if (devices.contains(UART_DEVICE_NAME)) {
