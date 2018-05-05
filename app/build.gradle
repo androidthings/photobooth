@@ -54,7 +54,7 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-android:1.4.0'
 
     compileOnly 'com.google.android.things:androidthings:1.0'
-    implementation 'com.google.android.things.contrib:driver-button:0.7'
+    implementation 'com.google.android.things.contrib:driver-button:1.0'
 
     implementation 'com.google.firebase:firebase-auth:10.2.4'
     implementation 'com.google.firebase:firebase-storage:10.2.4'
