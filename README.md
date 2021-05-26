@@ -14,6 +14,10 @@ This demo uses the following Google platforms and APIs:
 - [Firebase](https://firebase.google.com/) - To manage social media sharing, storing photos in the cloud, and creating short URLs to link to those photos.
 - [Google Assistant & Actions On Google](https://developers.google.com/actions/) - This photobooth talks.  To use it, you talk back.  No, really, it's a talking photobooth!  Also, it's kind of cheeky.
 
+> **Note:** The Android Things Console will be turned down for non-commercial
+> use on January 5, 2022. For more details, see the
+> [FAQ page](https://developer.android.com/things/faq).
+
 Pre-requisites
 --------------
 - One [Android-Things powered device](https://developer.android.com/things/hardware/developer-kits.html) with a connected camera.  This demo ran on a Raspberry Pi 3, but is in no way limited to that device.
